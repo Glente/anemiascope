@@ -5,6 +5,8 @@ import { Download, Eraser, Image as ImageIcon, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { ProvenancePanel } from "@/components/ProvenancePanel";
+import { buildProvenance } from "@/lib/provenance";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { GENES, getGene } from "@/data/genes";
 import { caseStore, LAB_FIELDS, useCase } from "@/lib/case-store";
-import { alphaFoldQuery, clinVarQuery, uniProtQuery } from "@/lib/evidence-queries";
+import { alphaFoldQuery, clinVarQuery, omimQuery, uniProtQuery } from "@/lib/evidence-queries";
 import { buildDeck } from "@/lib/pptx-export";
 import { describeVariant, parseVariant } from "@/lib/variant";
 
@@ -51,6 +53,13 @@ function ExportPage() {
   const alphafold = useQuery(alphaFoldQuery(gene.uniprot, parsed.residue));
   const clinvar = useQuery(clinVarQuery(gene.symbol, parsed.protein ?? parsed.cdna ?? undefined));
 
+  const primaryMim = gene.phenotypeMim?.[0]?.mim ?? gene.mim;
+  const omim = useQuery({ ...omimQuery(primaryMim ?? ""), enabled: Boolean(primaryMim) });
+  const provenance = buildProvenance({
+    gene, state, parsed,
+    uniprot: uniprot.data, alphafold: alphafold.data, clinvar: clinvar.data, omim: omim.data,
+  });
+
   const filledLabs = LAB_FIELDS.filter((f) => (state.labs[f.key] ?? "").trim() !== "");
 
   const onExport = async () => {
@@ -62,6 +71,7 @@ function ExportPage() {
         uniprot: uniprot.data,
         alphafold: alphafold.data,
         clinvar: clinvar.data,
+        provenance,
       });
       toast.success("PowerPoint downloaded.");
     } catch (e) {
@@ -77,8 +87,8 @@ function ExportPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Board slides</h1>
           <p className="text-sm text-muted-foreground">
-            Six slides: title, case summary, hematology, variant impact, AlphaFold view and
-            database evidence.
+            Seven slides: title, case summary, hematology, variant impact, AlphaFold view and
+            database evidence, plus a provenance slide.
           </p>
         </div>
 
@@ -143,6 +153,8 @@ function ExportPage() {
             </CardContent>
           </Card>
         )}
+
+        <ProvenancePanel rows={provenance} />
 
         <div className="flex flex-wrap items-center gap-3">
           <Button size="lg" onClick={onExport} disabled={busy}>

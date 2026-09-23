@@ -74,13 +74,13 @@ export function parseVariant(input: string): ParsedVariant {
   // Multi-change allele: c.[19G>A;295G>A]
   const multi = (result.cdna ?? "").match(/^c\.\[(.+)\]$/) ?? raw.match(/c\.\[([^\]]+)\]/);
   if (multi) {
-    const rs = multi[1].split(/\s*;\s*/).map((part) => {
+    const rs = multi[1]!.split(/\s*;\s*/).map((part) => {
       const m = part.trim().match(/^(?:c\.)?(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
       return m ? Math.ceil(Number(m[1]) / 3) : 0;
     }).filter((n) => n > 0);
     const uniq = [...new Set(rs)];
     if (uniq.length) {
-      result.residue = uniq[0];
+      result.residue = uniq[0]!;
       if (uniq.length > 1) result.extraResidues = uniq.slice(1);
       result.cdna = `c.[${multi[1]}]`;
     }

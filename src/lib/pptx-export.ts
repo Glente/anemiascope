@@ -40,7 +40,8 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
     x: 0.9, y: 1.5, w: 8.4, h: 0.5, fontFace: H.body, fontSize: 20, color: "C9A227", charSpacing: 2,
   });
   s1.addText(`${gene.symbol} ${state.variantInput || ""}`.trim(), {
-    x: 0.9, y: 2.0, w: 8.4, h: 1.0, fontFace: H.header, fontSize: 48, bold: true, color: WHITE,
+    x: 0.9, y: 1.95, w: 8.4, h: 1.15, fontFace: H.header, fontSize: 40, bold: true, color: WHITE,
+    fit: "shrink", valign: "middle",
   });
   s1.addText(
     [
@@ -48,7 +49,7 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
       { text: `${caseLabel}${state.zygosity ? ` · ${state.zygosity}` : ""}`, options: { breakLine: true } },
       { text: new Date().toLocaleDateString(), options: {} },
     ],
-    { x: 0.9, y: 3.1, w: 8.4, h: 1.3, fontFace: H.body, fontSize: 18, color: "C7D0D8", lineSpacing: 26 },
+    { x: 0.9, y: 3.25, w: 8.4, h: 1.3, fontFace: H.body, fontSize: 18, color: "C7D0D8", lineSpacing: 26 },
   );
 
   /* ---------- 2. Case summary ---------- */
@@ -166,10 +167,11 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
   const s5 = pptx.addSlide();
   s5.background = { color: INK };
   s5.addText(`AlphaFold model — ${gene.protein}`, {
-    x: 0.5, y: 0.35, w: 9.0, h: 0.5, fontFace: H.header, fontSize: 28, bold: true, color: WHITE,
+    x: 0.5, y: 0.3, w: 9.0, h: 0.75, fontFace: H.header, fontSize: 26, bold: true, color: WHITE,
+    fit: "shrink", valign: "middle",
   });
   if (state.structureImage) {
-    s5.addImage({ data: state.structureImage, x: 2.3, y: 1.0, w: 5.4, h: 3.8, sizing: { type: "contain", w: 5.4, h: 3.8 } });
+    s5.addImage({ data: state.structureImage, x: 2.3, y: 1.2, w: 5.4, h: 3.55, sizing: { type: "contain", w: 5.4, h: 3.55 } });
   } else {
     s5.addText("No 3D view captured — use 'Capture for slides' in the workspace.", {
       x: 1.0, y: 2.4, w: 8.0, h: 0.6, fontFace: H.body, fontSize: 16, color: "C7D0D8", align: "center",
@@ -188,7 +190,7 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
     {
       title: "ClinVar",
       body: clinvar?.hits.length
-        ? clinvar.hits.slice(0, 3).map((h) => `${h.significance}${h.reviewStatus ? ` (${h.reviewStatus})` : ""}`).join("\n")
+        ? clinvar.hits.slice(0, 2).map((h) => `${h.significance}${h.reviewStatus ? ` (${h.reviewStatus})` : ""}`).join("\n")
         : "No matching submission retrieved.",
       link: links.clinvar(gene.symbol, parsed.protein ?? state.variantInput),
     },
@@ -235,7 +237,8 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
       x: x + 0.15, y: y + 0.18, w: 2.55, h: 0.3, fontFace: H.body, fontSize: 14, bold: true, color: OXBLOOD,
     });
     s6.addText(c.body, {
-      x: x + 0.15, y: y + 0.5, w: 2.55, h: 0.85, fontFace: H.body, fontSize: 10.5, color: INK, valign: "top",
+      x: x + 0.15, y: y + 0.5, w: 2.55, h: 0.85, fontFace: H.body, fontSize: 10.5, color: INK,
+      valign: "top", fit: "shrink",
     });
     s6.addText("Open source", {
       x: x + 0.15, y: y + 1.4, w: 2.55, h: 0.25, fontFace: H.body, fontSize: 9, color: SLATE,

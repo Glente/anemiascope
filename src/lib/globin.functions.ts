@@ -237,3 +237,30 @@ export const fetchHbVar = createServerFn({ method: "GET" })
       return { ...base, error: e instanceof Error ? e.message : "HbVar lookup failed" };
     }
   });
+
+export type IthaIndexEntry = IthaMatch & { gene: string };
+
+/** Index of all IthaGenes entries (common name, Hb name, HGVS) for the globin genes in our panel. */
+export const listIthaIndex = createServerFn({ method: "GET" }).handler(async (): Promise<IthaIndexEntry[]> => {
+  const out: IthaIndexEntry[] = [];
+  const seen = new Set<string>();
+  await Promise.all(
+    Object.entries(ITHA_GENE_IDS).map(async ([gene, gid]) => {
+      try {
+        const res = await fetch(`https://www.ithanet.eu/db/ithagenes?action=list&gn=${gid}`, { headers: UA });
+        if (!res.ok) return;
+        const html = await res.text();
+        const rowRe = /<tr>\s*<td><a href="[^"]*ithaID=(\d+)">\d+<\/a><\/td>([\s\S]*?)<\/tr>/g;
+        let r: RegExpExecArray | null;
+        while ((r = rowRe.exec(html))) {
+          if (seen.has(r[1]!)) continue;
+          seen.add(r[1]!);
+          const cells = [...r[2]!.matchAll(/<td>([\s\S]*?)<\/td>/g)].map((c) => strip(c[1]!));
+          const hgvs = cells[2] ?? "";
+          out.push({ ithaId: r[1]!, commonName: cells[0] ?? "", hbName: cells[1] === "N/A" ? "" : cells[1] ?? "", hgvsName: hgvs === "N/A" ? "" : hgvs, gene: /^(HB[A-Z0-9]+):/.exec(hgvs)?.[1] ?? gene });
+        }
+      } catch { /* skip gene */ }
+    }),
+  );
+  return out;
+});

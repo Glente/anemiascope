@@ -39,9 +39,11 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
   s1.addText("Anemia variant board", {
     x: 0.9, y: 1.5, w: 8.4, h: 0.5, fontFace: H.body, fontSize: 20, color: "C9A227", charSpacing: 2,
   });
-  s1.addText(`${gene.symbol} ${state.variantInput || ""}`.trim(), {
-    x: 0.9, y: 1.95, w: 8.4, h: 1.15, fontFace: H.header, fontSize: 40, bold: true, color: WHITE,
-    fit: "shrink", valign: "middle",
+  const headline = `${gene.symbol} ${state.variantInput || ""}`.trim();
+  s1.addText(headline, {
+    x: 0.9, y: 1.9, w: 8.4, h: 1.35,
+    fontFace: H.header, fontSize: headline.length > 34 ? 26 : headline.length > 22 ? 32 : 42,
+    bold: true, color: WHITE, valign: "middle",
   });
   s1.addText(
     [
@@ -49,7 +51,7 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
       { text: `${caseLabel}${state.zygosity ? ` · ${state.zygosity}` : ""}`, options: { breakLine: true } },
       { text: new Date().toLocaleDateString(), options: {} },
     ],
-    { x: 0.9, y: 3.25, w: 8.4, h: 1.3, fontFace: H.body, fontSize: 18, color: "C7D0D8", lineSpacing: 26 },
+    { x: 0.9, y: 3.4, w: 8.4, h: 1.3, fontFace: H.body, fontSize: 18, color: "C7D0D8", lineSpacing: 26 },
   );
 
   /* ---------- 2. Case summary ---------- */
@@ -166,9 +168,11 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
   /* ---------- 5. Structure ---------- */
   const s5 = pptx.addSlide();
   s5.background = { color: INK };
-  s5.addText(`AlphaFold model — ${gene.protein}`, {
-    x: 0.5, y: 0.3, w: 9.0, h: 0.75, fontFace: H.header, fontSize: 26, bold: true, color: WHITE,
-    fit: "shrink", valign: "middle",
+  const structTitle = `AlphaFold model — ${gene.protein}`;
+  s5.addText(structTitle, {
+    x: 0.5, y: 0.25, w: 9.0, h: 0.8,
+    fontFace: H.header, fontSize: structTitle.length > 44 ? 20 : 26,
+    bold: true, color: WHITE, valign: "middle",
   });
   if (state.structureImage) {
     s5.addImage({ data: state.structureImage, x: 2.3, y: 1.2, w: 5.4, h: 3.55, sizing: { type: "contain", w: 5.4, h: 3.55 } });

@@ -29,6 +29,7 @@ export type UniProtInfo = {
   length: number;
   residueAa: string | null;
   sequenceWindow: string | null;
+  sequence?: string | undefined;
   features: UniProtFeature[];
   knownVariantsAtResidue: { description: string; alt: string }[];
   error?: string;
@@ -113,6 +114,7 @@ export const fetchUniProt = createServerFn({ method: "GET" })
           "",
         geneName: json["genes"]?.[0]?.geneName?.value ?? "",
         length: sequence.length,
+        sequence,
         residueAa: residue && sequence[residue - 1] ? sequence[residue - 1]! : null,
         sequenceWindow:
           residue && sequence
@@ -306,5 +308,70 @@ export const fetchOmim = createServerFn({ method: "GET" })
       };
     } catch (e) {
       return { mim: data.mim, configured: true, error: e instanceof Error ? e.message : "OMIM lookup failed" };
+    }
+  });
+
+export type TranscriptExon = {
+  rank: number;
+  start: number;
+  end: number;
+  cdsStart: number | null;
+  cdsEnd: number | null;
+};
+
+export type TranscriptInfo = {
+  gene: string;
+  transcriptId: string;
+  chromosome: string;
+  strand: number;
+  assembly: string;
+  exons: TranscriptExon[];
+  cds: string;
+  provenance?: Provenance | undefined;
+  error?: string | undefined;
+};
+
+export const fetchTranscript = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => z.object({ gene: z.string().regex(/^[A-Z0-9-]{2,15}$/) }).parse(input))
+  .handler(async ({ data }): Promise<TranscriptInfo> => {
+    const base: TranscriptInfo = {
+      gene: data.gene, transcriptId: "", chromosome: "", strand: 1, assembly: "", exons: [], cds: "",
+    };
+    const lookupUrl = `https://rest.ensembl.org/lookup/symbol/homo_sapiens/${data.gene}?expand=1`;
+    try {
+      const res = await fetch(lookupUrl, { headers: { "content-type": "application/json", accept: "application/json" } });
+      if (!res.ok) return { ...base, error: `Ensembl returned ${res.status}` };
+      const g = (await res.json()) as any;
+      const tx = (g.Transcript ?? []).find((t: any) => t.is_canonical === 1) ?? g.Transcript?.[0];
+      if (!tx?.Translation) return { ...base, error: "No coding transcript found" };
+      const strand = Number(tx.strand);
+      const tStart = Number(tx.Translation.start), tEnd = Number(tx.Translation.end);
+      const exonsRaw = [...(tx.Exon ?? [])].sort((a: any, b: any) => (strand === 1 ? a.start - b.start : b.end - a.end));
+      let acc = 0;
+      const exons: TranscriptExon[] = exonsRaw.map((e: any, i: number) => {
+        const s = Math.max(e.start, tStart), en = Math.min(e.end, tEnd);
+        if (s > en) return { rank: i + 1, start: e.start, end: e.end, cdsStart: null, cdsEnd: null };
+        const len = en - s + 1;
+        const r = { rank: i + 1, start: e.start, end: e.end, cdsStart: acc + 1, cdsEnd: acc + len };
+        acc += len;
+        return r;
+      });
+      const txId = `${tx.id}${tx.version ? `.${tx.version}` : ""}`;
+      const seqUrl = `https://rest.ensembl.org/sequence/id/${tx.id}?type=cds`;
+      const sr = await fetch(seqUrl, { headers: { "content-type": "text/plain" } });
+      const cds = sr.ok ? (await sr.text()).trim() : "";
+      return {
+        gene: data.gene,
+        transcriptId: txId,
+        chromosome: String(tx.seq_region_name ?? g.seq_region_name ?? ""),
+        strand,
+        assembly: String(g.assembly_name ?? ""),
+        exons,
+        cds,
+        provenance: prov(`${lookupUrl} ; ${seqUrl}`, `${txId} (Ensembl canonical) · ${g.assembly_name ?? ""}`),
+        ...(sr.ok ? {} : { error: `CDS sequence returned ${sr.status}` }),
+      };
+    } catch (e) {
+      return { ...base, error: e instanceof Error ? e.message : "Ensembl lookup failed" };
     }
   });

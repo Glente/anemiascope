@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { UniProtInfo } from "@/lib/evidence.functions";
+import type { TranscriptInfo, UniProtInfo } from "@/lib/evidence.functions";
+import { CodingStrip, GeneSchematic } from "@/components/SequenceViews";
 
 const TYPE_COLOR: Record<string, string> = {
   Domain: "var(--chart-1)",
@@ -18,7 +19,15 @@ export function ProteinMap({
   residue,
   altAa,
   geneSymbol,
+  tx,
+  focus,
+  onSelect,
+  onReset,
 }: {
+  tx?: TranscriptInfo | undefined;
+  focus: number | null;
+  onSelect: (r: number) => void;
+  onReset: () => void;
   info?: UniProtInfo | undefined;
   residue?: number | undefined;
   altAa?: string | null | undefined;
@@ -32,19 +41,47 @@ export function ProteinMap({
   const laneH = 18, top = 58;
   const H = top + lanes.length * laneH + 34;
   const ticks = Array.from({ length: 6 }, (_, i) => Math.round(1 + (i * (len - 1)) / 5));
-  const win = info!.sequenceWindow ?? "";
-  const winStart = residue ? Math.max(1, residue - 5) : 1;
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Protein map</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base">Gene, coding sequence &amp; protein</CardTitle>
+          <div className="flex items-center gap-2 text-xs">
+            <label htmlFor="focus-pos" className="text-muted-foreground">Position</label>
+            <input id="focus-pos" type="number" min={1} max={len} value={focus ?? ""}
+              onChange={(e) => { const v = Number(e.target.value); if (v >= 1 && v <= len) onSelect(v); }}
+              className="h-7 w-20 rounded border bg-background px-2" />
+            {residue && focus !== residue && (
+              <button type="button" onClick={onReset} className="rounded border px-2 py-1 hover:bg-muted">
+                Back to variant
+              </button>
+            )}
+          </div>
+        </div>
         <CardDescription>
-          {geneSymbol} · {info!.proteinName} · {len} aa — UniProt features, variant position marked
+          {geneSymbol} · {info!.proteinName} · {len} aa — click any view to move the linked position; the 3D model follows
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Protein feature map">
+        {tx?.exons.length ? (
+          <GeneSchematic tx={tx} focus={focus} variant={residue} onSelect={onSelect} />
+        ) : tx?.error ? (
+          <p className="text-xs text-muted-foreground">Gene structure unavailable: {tx.error}</p>
+        ) : null}
+        {tx?.cds && info?.length && Math.abs(tx.cds.length / 3 - 1 - info.length) > 0 && (
+          <p className="text-xs text-destructive">
+            Ensembl canonical CDS ({tx.cds.length / 3 - 1} aa) differs from UniProt ({info.length} aa) — codons may not align.
+          </p>
+        )}
+        <p className="-mb-3 text-xs uppercase tracking-wide text-muted-foreground">Protein features</p>
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full cursor-crosshair" role="img"
+          onClick={(ev) => {
+            const rect = ev.currentTarget.getBoundingClientRect();
+            const px = ((ev.clientX - rect.left) / rect.width) * W;
+            const r = Math.round(1 + ((px - L) / inner) * (len - 1));
+            onSelect(Math.min(len, Math.max(1, r)));
+          }} aria-label="Protein feature map">
           {/* backbone */}
           <rect x={L} y={30} width={inner} height={14} rx={7} fill="var(--muted)" stroke="var(--border)" />
           {info!.features
@@ -74,6 +111,9 @@ export function ProteinMap({
               </g>
             );
           })}
+          {focus && focus !== residue && (
+            <line x1={x(focus)} x2={x(focus)} y1={24} y2={H - 22} stroke="var(--foreground)" strokeWidth={1.5} strokeDasharray="4 3" />
+          )}
           {residue && residue <= len && (
             <g>
               <line x1={x(residue)} x2={x(residue)} y1={24} y2={H - 22} stroke="var(--primary)" strokeWidth={2} />
@@ -99,28 +139,8 @@ export function ProteinMap({
           )}
         </div>
 
-        {residue && win && (
-          <div>
-            <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Local sequence</p>
-            <div className="flex flex-wrap gap-1 font-mono text-sm">
-              {win.split("").map((aa, i) => {
-                const pos = winStart + i;
-                const hit = pos === residue;
-                return (
-                  <div key={pos}
-                    className={`flex w-9 flex-col items-center rounded border py-1 ${hit ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/40"}`}>
-                    <span className="font-semibold">{aa}</span>
-                    <span className={`text-[10px] ${hit ? "" : "text-muted-foreground"}`}>{pos}</span>
-                  </div>
-                );
-              })}
-              {altAa && (
-                <span className="self-center pl-2 text-xs text-muted-foreground">
-                  → {altAa} at {residue}
-                </span>
-              )}
-            </div>
-          </div>
+        {info!.sequence && (
+          <CodingStrip cds={tx?.cds ?? ""} protein={info!.sequence} focus={focus} variant={residue} onSelect={onSelect} />
         )}
       </CardContent>
     </Card>

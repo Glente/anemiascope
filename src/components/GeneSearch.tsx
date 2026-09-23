@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { CATEGORY_LABEL, GENES, type Gene, type GeneCategory } from "@/data/genes";
 
 type Props = {

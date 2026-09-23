@@ -134,7 +134,7 @@ function Workspace() {
               <Select
                 value={state.geneSymbol}
                 onValueChange={(v) =>
-                  caseStore.set({ geneSymbol: v, variantInput: "", presetLabel: "" })
+                  caseStore.set({ geneSymbol: v, variantInput: "", presetLabel: "", ithaId: "" })
                 }
               >
                 <SelectTrigger>
@@ -185,6 +185,7 @@ function Workspace() {
                         caseStore.set({
                           variantInput: `${p.cdna ? `${p.cdna} ` : ""}${p.protein}`,
                           presetLabel: p.label,
+                          ithaId: "",
                         })
                       }
                       className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
@@ -213,10 +214,35 @@ function Workspace() {
                   placeholder="c.563C>T p.Ser188Phe"
                   value={state.variantInput}
                   onChange={(e) =>
-                    caseStore.set({ variantInput: e.target.value, presetLabel: "" })
+                    caseStore.set({ variantInput: e.target.value, presetLabel: "", ithaId: "" })
                   }
                 />
               </div>
+
+              <form
+                className="space-y-1.5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void loadIthaId(ithaInput.trim());
+                }}
+              >
+                <Label htmlFor="ithaid">IthaID (ITHANET)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="ithaid"
+                    inputMode="numeric"
+                    placeholder="e.g. 824 for HbS"
+                    value={ithaInput}
+                    onChange={(e) => setIthaInput(e.target.value.replace(/\D/g, ""))}
+                  />
+                  <Button type="submit" variant="outline" disabled={!ithaInput || ithaLoading}>
+                    {ithaLoading ? "Loading…" : "Load"}
+                  </Button>
+                </div>
+                {state.ithaId && (
+                  <p className="text-xs text-muted-foreground">Loaded from IthaID {state.ithaId}</p>
+                )}
+              </form>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -382,6 +408,13 @@ function Workspace() {
               )}
             </CardContent>
           </Card>
+
+          <GlobinEvidence
+            gene={gene.symbol}
+            cdna={parsed.cdna}
+            ithaId={state.ithaId}
+            onPick={(id) => void loadIthaId(id)}
+          />
 
           <div className="grid gap-4 md:grid-cols-2">
             <EvidenceCard

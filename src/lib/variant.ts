@@ -63,10 +63,16 @@ export function parseVariant(input: string): ParsedVariant {
     if (bare && /p\./.test(raw)) result.residue = Number(bare[1]);
   }
 
+  // Derive the affected codon from a coding cDNA position (e.g. c.20A>T -> codon 7)
+  if (!result.residue) {
+    const pos = (result.cdna ?? "").match(/^c\.(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
+    if (pos && Number(pos[1]) > 0) result.residue = Math.ceil(Number(pos[1]) / 3);
+  }
+
   if (result.consequence === "Unclassified" && result.refAa && result.altAa) {
     result.consequence = result.refAa === result.altAa ? "Synonymous" : "Missense";
   }
-  if (result.consequence === "Unclassified" && result.cdna && !result.residue) {
+  if (result.consequence === "Unclassified" && result.cdna) {
     result.consequence = "Nucleotide-level variant";
   }
 

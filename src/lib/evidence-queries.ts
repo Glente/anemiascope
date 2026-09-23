@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { fetchAlphaFold, fetchClinVar, fetchOmim, fetchUniProt } from "./evidence.functions";
+import { fetchAlphaFold, fetchClinVar, fetchOmim, fetchTranscript, fetchUniProt } from "./evidence.functions";
 
 export const uniProtQuery = (accession: string, residue?: number) =>
   queryOptions({
@@ -28,6 +28,13 @@ export const omimQuery = (mim: string) =>
   queryOptions({
     queryKey: ["omim", mim],
     queryFn: () => fetchOmim({ data: { mim } }),
+    staleTime: 1000 * 60 * 60,
+  });
+
+export const transcriptQuery = (gene: string) =>
+  queryOptions({
+    queryKey: ["transcript", gene],
+    queryFn: () => fetchTranscript({ data: { gene } }),
     staleTime: 1000 * 60 * 60,
   });
 

@@ -25,8 +25,8 @@ export function GeneSearch({ value, onChange }: Props) {
   }, [query, selectedGene]);
 
   const results = useMemo(() => {
-    if (!query.trim()) return [];
     const q = query.trim().toLowerCase();
+    if (!q) return GENES;
     return GENES.filter(
       (g) =>
         g.symbol.toLowerCase().includes(q) ||

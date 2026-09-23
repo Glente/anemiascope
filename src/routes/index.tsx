@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { CATEGORY_LABEL, GENES, getGene, type GeneCategory } from "@/data/genes";
+import { CATEGORY_LABEL, GENES, getGene } from "@/data/genes";
 import { caseStore, useCase } from "@/lib/case-store";
 import {
   alphaFoldQuery,

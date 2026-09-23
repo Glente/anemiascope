@@ -103,7 +103,7 @@ export function GeneSearch({ value, onChange }: Props) {
         />
       </div>
 
-      {open && query.trim() && (
+      {open && (
         <div className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
           {flatResults.length === 0 ? (
             <p className="px-2 py-3 text-xs text-muted-foreground">

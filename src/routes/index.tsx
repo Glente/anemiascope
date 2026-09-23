@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { GlobinEvidence, ithaQuery } from "@/components/GlobinEvidence";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -94,6 +95,38 @@ function Workspace() {
   const primaryMim = gene.phenotypeMim?.[0]?.mim ?? gene.mim;
   const omim = useQuery({ ...omimQuery(primaryMim ?? ""), enabled: Boolean(primaryMim) });
 
+  const queryClient = useQueryClient();
+  const [ithaInput, setIthaInput] = useState("");
+  const [ithaLoading, setIthaLoading] = useState(false);
+  const loadIthaId = async (id: string) => {
+    if (!/^\d{1,6}$/.test(id)) return;
+    setIthaLoading(true);
+    try {
+      const info = await queryClient.fetchQuery(ithaQuery(id));
+      if (!info.found) {
+        toast.error(info.error ?? `IthaID ${id} not found`);
+        return;
+      }
+      const g = info.gene ? getGene(info.gene) : undefined;
+      if (!g) {
+        toast.error(`IthaID ${id} (${info.hgvsName || info.commonName}) is not in this app's gene panel.`);
+        return;
+      }
+      setIthaInput(id);
+      caseStore.set({
+        geneSymbol: g.symbol,
+        variantInput: info.hgvsName.replace(/^[A-Z0-9]+:/, ""),
+        presetLabel: "",
+        ithaId: id,
+      });
+      toast.success(`Loaded IthaID ${id}: ${info.hbName || info.commonName}`);
+    } catch {
+      toast.error("ITHANET could not be reached.");
+    } finally {
+      setIthaLoading(false);
+    }
+  };
+
   const grouped = useMemo(() => {
     const out: Record<GeneCategory, typeof GENES> = { membrane: [], enzyme: [], hemoglobin: [] };
     GENES.forEach((g) => out[g.category].push(g));
@@ -134,7 +167,7 @@ function Workspace() {
               <Select
                 value={state.geneSymbol}
                 onValueChange={(v) =>
-                  caseStore.set({ geneSymbol: v, variantInput: "", presetLabel: "" })
+                  caseStore.set({ geneSymbol: v, variantInput: "", presetLabel: "", ithaId: "" })
                 }
               >
                 <SelectTrigger>
@@ -185,6 +218,7 @@ function Workspace() {
                         caseStore.set({
                           variantInput: `${p.cdna ? `${p.cdna} ` : ""}${p.protein}`,
                           presetLabel: p.label,
+                          ithaId: "",
                         })
                       }
                       className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
@@ -213,10 +247,35 @@ function Workspace() {
                   placeholder="c.563C>T p.Ser188Phe"
                   value={state.variantInput}
                   onChange={(e) =>
-                    caseStore.set({ variantInput: e.target.value, presetLabel: "" })
+                    caseStore.set({ variantInput: e.target.value, presetLabel: "", ithaId: "" })
                   }
                 />
               </div>
+
+              <form
+                className="space-y-1.5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void loadIthaId(ithaInput.trim());
+                }}
+              >
+                <Label htmlFor="ithaid">IthaID (ITHANET)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="ithaid"
+                    inputMode="numeric"
+                    placeholder="e.g. 824 for HbS"
+                    value={ithaInput}
+                    onChange={(e) => setIthaInput(e.target.value.replace(/\D/g, ""))}
+                  />
+                  <Button type="submit" variant="outline" disabled={!ithaInput || ithaLoading}>
+                    {ithaLoading ? "Loading…" : "Load"}
+                  </Button>
+                </div>
+                {state.ithaId && (
+                  <p className="text-xs text-muted-foreground">Loaded from IthaID {state.ithaId}</p>
+                )}
+              </form>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -382,6 +441,13 @@ function Workspace() {
               )}
             </CardContent>
           </Card>
+
+          <GlobinEvidence
+            gene={gene.symbol}
+            cdna={parsed.cdna}
+            ithaId={state.ithaId}
+            onPick={(id) => void loadIthaId(id)}
+          />
 
           <div className="grid gap-4 md:grid-cols-2">
             <EvidenceCard

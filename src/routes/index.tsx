@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { ProteinMap } from "@/components/ProteinMap";
 import { ProvenancePanel } from "@/components/ProvenancePanel";
 import { buildProvenance } from "@/lib/provenance";
 import { Badge } from "@/components/ui/badge";
@@ -277,6 +278,8 @@ function Workspace() {
 
         {/* Right column: structure + evidence */}
         <div className="space-y-4">
+          <ProteinMap info={uniprot.data} residue={residue} altAa={parsed.altAa} geneSymbol={gene.symbol} />
+
           <Card>
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pb-3">
               <div>

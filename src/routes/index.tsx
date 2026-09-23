@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { GeneSearch } from "@/components/GeneSearch";
 import { ProteinMap } from "@/components/ProteinMap";
 import { ProvenancePanel } from "@/components/ProvenancePanel";
 import { buildProvenance } from "@/lib/provenance";
@@ -39,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { CATEGORY_LABEL, GENES, getGene, type GeneCategory } from "@/data/genes";
+import { CATEGORY_LABEL, GENES, getGene } from "@/data/genes";
 import { caseStore, useCase } from "@/lib/case-store";
 import {
   alphaFoldQuery,
@@ -127,11 +128,6 @@ function Workspace() {
     }
   };
 
-  const grouped = useMemo(() => {
-    const out: Record<GeneCategory, typeof GENES> = { hemoglobin: [], membrane: [], enzyme: [] };
-    GENES.forEach((g) => out[g.category].push(g));
-    return out;
-  }, []);
 
   const capture = async () => {
     const fn = snapshotRef.current;
@@ -164,28 +160,12 @@ function Workspace() {
               <CardDescription>Target anemia panel</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Select
+              <GeneSearch
                 value={state.geneSymbol}
-                onValueChange={(v) =>
+                onChange={(v: string) =>
                   caseStore.set({ geneSymbol: v, variantInput: "", presetLabel: "", ithaId: "" })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(grouped) as GeneCategory[]).map((cat) => (
-                    <SelectGroup key={cat}>
-                      <SelectLabel>{CATEGORY_LABEL[cat]}</SelectLabel>
-                      {grouped[cat].map((g) => (
-                        <SelectItem key={g.symbol} value={g.symbol}>
-                          {g.symbol} — {g.protein}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
 
               <div className="space-y-2 text-sm">
                 <div className="flex flex-wrap gap-1.5">

@@ -65,7 +65,7 @@ export function parseVariant(input: string): ParsedVariant {
 
   // Derive the affected codon from a coding cDNA position (e.g. c.20A>T -> codon 7)
   if (!result.residue) {
-    const pos = raw.trim().match(/^c\.(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
+    const pos = (result.cdna ?? "").match(/^c\.(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
     if (pos && Number(pos[1]) > 0) result.residue = Math.ceil(Number(pos[1]) / 3);
   }
 

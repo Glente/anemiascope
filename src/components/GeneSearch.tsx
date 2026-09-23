@@ -143,12 +143,6 @@ export function GeneSearch({ value, onChange }: Props) {
         </div>
       )}
 
-      {selectedGene && !open && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge variant="secondary">{CATEGORY_LABEL[selectedGene.category]}</Badge>
-          <Badge variant="outline">{selectedGene.inheritance}</Badge>
-        </div>
-      )}
     </div>
   );
 }

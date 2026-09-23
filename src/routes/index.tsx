@@ -128,11 +128,6 @@ function Workspace() {
     }
   };
 
-  const grouped = useMemo(() => {
-    const out: Record<GeneCategory, typeof GENES> = { hemoglobin: [], membrane: [], enzyme: [] };
-    GENES.forEach((g) => out[g.category].push(g));
-    return out;
-  }, []);
 
   const capture = async () => {
     const fn = snapshotRef.current;

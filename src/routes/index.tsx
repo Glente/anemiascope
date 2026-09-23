@@ -313,7 +313,7 @@ function Workspace() {
                 <div className="rounded-md border bg-muted/40 p-3 text-xs">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge>{parsed.consequence}</Badge>
-                    {residue && <Badge variant="outline">Residue {residue}</Badge>}
+                    {residue && <Badge variant="outline">{parsed.extraResidues?.length ? `Residues ${[residue, ...parsed.extraResidues].join(", ")}` : `Residue ${residue}`}</Badge>}
                     {parsed.refAa && parsed.altAa && (
                       <Badge variant="outline">{describeVariant(parsed)}</Badge>
                     )}

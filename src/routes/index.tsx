@@ -98,7 +98,7 @@ function Workspace() {
   const omim = useQuery({ ...omimQuery(primaryMim ?? ""), enabled: Boolean(primaryMim) });
 
   const queryClient = useQueryClient();
-  const [ithaInput, setIthaInput] = useState("");
+
   const [ithaLoading, setIthaLoading] = useState(false);
   const loadIthaId = async (id: string) => {
     if (!/^\d{1,6}$/.test(id)) return;
@@ -114,7 +114,7 @@ function Workspace() {
         toast.error(`IthaID ${id} (${info.hgvsName || info.commonName}) is not in this app's gene panel.`);
         return;
       }
-      setIthaInput(id);
+
       caseStore.set({
         geneSymbol: g.symbol,
         variantInput: info.hgvsName.replace(/^[A-Z0-9]+:/, ""),

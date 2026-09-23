@@ -128,7 +128,7 @@ function Workspace() {
   };
 
   const grouped = useMemo(() => {
-    const out: Record<GeneCategory, typeof GENES> = { membrane: [], enzyme: [], hemoglobin: [] };
+    const out: Record<GeneCategory, typeof GENES> = { hemoglobin: [], membrane: [], enzyme: [] };
     GENES.forEach((g) => out[g.category].push(g));
     return out;
   }, []);
@@ -354,6 +354,13 @@ function Workspace() {
             onReset={() => selectionStore.set(null)}
           />
 
+          <GlobinEvidence
+            gene={gene.symbol}
+            cdna={parsed.cdna}
+            ithaId={state.ithaId}
+            onPick={(id) => void loadIthaId(id)}
+          />
+
           <Card>
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pb-3">
               <div>
@@ -442,12 +449,6 @@ function Workspace() {
             </CardContent>
           </Card>
 
-          <GlobinEvidence
-            gene={gene.symbol}
-            cdna={parsed.cdna}
-            ithaId={state.ithaId}
-            onPick={(id) => void loadIthaId(id)}
-          />
 
           <div className="grid gap-4 md:grid-cols-2">
             <EvidenceCard

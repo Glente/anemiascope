@@ -49,7 +49,7 @@ export const LAB_FIELDS: LabValue[] = [
 ];
 
 const initial = (): CaseState => ({
-  geneSymbol: "G6PD",
+  geneSymbol: "HBB",
   variantInput: "",
   presetLabel: "",
   ithaId: "",

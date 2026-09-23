@@ -98,7 +98,7 @@ export function GeneSearch({ value, onChange }: Props) {
             setOpen(true);
             setActiveIndex(0);
           }}
-          onFocus={() => query && setOpen(true)}
+          onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
         />
       </div>

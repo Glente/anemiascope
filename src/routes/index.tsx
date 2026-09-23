@@ -164,28 +164,12 @@ function Workspace() {
               <CardDescription>Target anemia panel</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Select
+              <GeneSearch
                 value={state.geneSymbol}
-                onValueChange={(v) =>
+                onChange={(v) =>
                   caseStore.set({ geneSymbol: v, variantInput: "", presetLabel: "", ithaId: "" })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(grouped) as GeneCategory[]).map((cat) => (
-                    <SelectGroup key={cat}>
-                      <SelectLabel>{CATEGORY_LABEL[cat]}</SelectLabel>
-                      {grouped[cat].map((g) => (
-                        <SelectItem key={g.symbol} value={g.symbol}>
-                          {g.symbol} — {g.protein}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
 
               <div className="space-y-2 text-sm">
                 <div className="flex flex-wrap gap-1.5">

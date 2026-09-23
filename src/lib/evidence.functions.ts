@@ -1,6 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+export type Provenance = {
+  sourceUrl: string;
+  retrievedAt: string;
+  recordVersion: string | null;
+};
+
+const prov = (sourceUrl: string, recordVersion: string | null = null): Provenance => ({
+  sourceUrl,
+  retrievedAt: new Date().toISOString(),
+  recordVersion,
+});
+
 export type UniProtFeature = {
   type: string;
   description: string;
@@ -10,6 +22,7 @@ export type UniProtFeature = {
 };
 
 export type UniProtInfo = {
+  provenance?: Provenance | undefined;
   accession: string;
   proteinName: string;
   geneName: string;
@@ -47,11 +60,10 @@ export const fetchUniProt = createServerFn({ method: "GET" })
       features: [],
       knownVariantsAtResidue: [],
     };
+    const url = `https://rest.uniprot.org/uniprotkb/${data.accession}.json?fields=accession,protein_name,gene_names,sequence,ft_domain,ft_region,ft_binding,ft_act_site,ft_transmem,ft_motif,ft_variant,ft_site,ft_disulfid`;
+    base.provenance = prov(url);
     try {
-      const res = await fetch(
-        `https://rest.uniprot.org/uniprotkb/${data.accession}.json?fields=accession,protein_name,gene_names,sequence,ft_domain,ft_region,ft_binding,ft_act_site,ft_transmem,ft_motif,ft_variant,ft_site,ft_disulfid`,
-        { headers: { accept: "application/json" } },
-      );
+      const res = await fetch(url, { headers: { accept: "application/json" } });
       if (!res.ok) return { ...base, error: `UniProt returned ${res.status}` };
       const json = (await res.json()) as Record<string, any>;
 
@@ -86,7 +98,14 @@ export const fetchUniProt = createServerFn({ method: "GET" })
 
       features.sort((a, b) => Number(b.covers) - Number(a.covers) || a.start - b.start);
 
+      const audit = json["entryAudit"] ?? {};
+      const version = [
+        audit.entryVersion ? `entry v${audit.entryVersion}` : null,
+        audit.sequenceVersion ? `sequence v${audit.sequenceVersion}` : null,
+        audit.lastAnnotationUpdateDate ? `updated ${audit.lastAnnotationUpdateDate}` : null,
+      ].filter(Boolean).join(" · ");
       return {
+        provenance: prov(url, version || null),
         accession: json["primaryAccession"] ?? data.accession,
         proteinName:
           json["proteinDescription"]?.recommendedName?.fullName?.value ??
@@ -108,6 +127,7 @@ export const fetchUniProt = createServerFn({ method: "GET" })
   });
 
 export type AlphaFoldInfo = {
+  provenance?: Provenance | undefined;
   accession: string;
   available: boolean;
   modelUrl?: string | undefined;
@@ -128,17 +148,18 @@ function plddtBand(v: number): string {
 export const fetchAlphaFold = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => accessionInput.parse(input))
   .handler(async ({ data }): Promise<AlphaFoldInfo> => {
+    const url = `https://alphafold.ebi.ac.uk/api/prediction/${data.accession}`;
     try {
-      const res = await fetch(`https://alphafold.ebi.ac.uk/api/prediction/${data.accession}`, {
+      const res = await fetch(url, {
         headers: {
           accept: "application/json",
           "user-agent": "AnemiaVariantBoard/1.0 (clinical research tool)",
         },
       });
-      if (!res.ok) return { accession: data.accession, available: false, error: `AlphaFold returned ${res.status}` };
+      if (!res.ok) return { accession: data.accession, provenance: prov(url), available: false, error: `AlphaFold returned ${res.status}` };
       const arr = (await res.json()) as any[];
       const entry = arr?.[0];
-      if (!entry) return { accession: data.accession, available: false, error: "No AlphaFold model found" };
+      if (!entry) return { accession: data.accession, provenance: prov(url), available: false, error: "No AlphaFold model found" };
 
       let plddt: number | null = null;
       if (data.residue && entry.pdbUrl) {
@@ -160,6 +181,11 @@ export const fetchAlphaFold = createServerFn({ method: "GET" })
       }
 
       return {
+        provenance: prov(
+          data.residue && entry.pdbUrl ? `${url} ; pLDDT from ${entry.pdbUrl}` : url,
+          [entry.entryId, entry.latestVersion ? `model v${entry.latestVersion}` : null, entry.modelCreatedDate ? `created ${entry.modelCreatedDate.slice(0, 10)}` : null]
+            .filter(Boolean).join(" · ") || null,
+        ),
         accession: data.accession,
         available: true,
         modelUrl: entry.cifUrl ?? entry.pdbUrl,
@@ -179,6 +205,7 @@ export const fetchAlphaFold = createServerFn({ method: "GET" })
 
 export type ClinVarHit = {
   uid: string;
+  accession: string;
   title: string;
   significance: string;
   reviewStatus: string;
@@ -187,6 +214,7 @@ export type ClinVarHit = {
 };
 
 export type ClinVarResult = {
+  provenance?: Provenance | undefined;
   query: string;
   total: number;
   hits: ClinVarHit[];
@@ -202,14 +230,13 @@ export const fetchClinVar = createServerFn({ method: "GET" })
       ? `${data.gene}[gene] AND "${data.variant.replace(/"/g, "")}"`
       : `${data.gene}[gene]`;
     try {
-      const esearch = await fetch(
-        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&retmode=json&retmax=8&term=${encodeURIComponent(term)}`,
-      );
+      const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&retmode=json&retmax=8&term=${encodeURIComponent(term)}`;
+      const esearch = await fetch(esearchUrl);
       if (!esearch.ok) return { query: term, total: 0, hits: [], error: `ClinVar returned ${esearch.status}` };
       const sj = (await esearch.json()) as any;
       const ids: string[] = sj?.esearchresult?.idlist ?? [];
       const total = Number(sj?.esearchresult?.count ?? 0);
-      if (!ids.length) return { query: term, total, hits: [] };
+      if (!ids.length) return { query: term, total, hits: [], provenance: prov(esearchUrl, "no records matched") };
 
       const esum = await fetch(
         `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&retmode=json&id=${ids.join(",")}`,
@@ -221,6 +248,7 @@ export const fetchClinVar = createServerFn({ method: "GET" })
         .filter(Boolean)
         .map((r: any) => ({
           uid: String(r.uid ?? r.accession ?? ""),
+          accession: String(r.accession_version ?? r.accession ?? ""),
           title: String(r.title ?? ""),
           significance: String(r.germline_classification?.description ?? r.clinical_significance?.description ?? "Not provided"),
           reviewStatus: String(r.germline_classification?.review_status ?? r.clinical_significance?.review_status ?? ""),
@@ -230,13 +258,23 @@ export const fetchClinVar = createServerFn({ method: "GET" })
             .filter(Boolean)
             .join("; "),
         }));
-      return { query: term, total, hits };
+      const esumUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&retmode=json&id=${ids.join(",")}`;
+      return {
+        query: term,
+        total,
+        hits,
+        provenance: prov(
+          `${esearchUrl} ; ${esumUrl}`,
+          hits.map((h) => h.accession).filter(Boolean).slice(0, 4).join(", ") || null,
+        ),
+      };
     } catch (e) {
       return { query: term, total: 0, hits: [], error: e instanceof Error ? e.message : "ClinVar lookup failed" };
     }
   });
 
 export type OmimResult = {
+  provenance?: Provenance | undefined;
   mim: string;
   configured: boolean;
   title?: string | undefined;
@@ -250,9 +288,8 @@ export const fetchOmim = createServerFn({ method: "GET" })
     const key = process.env["OMIM_API_KEY"];
     if (!key) return { mim: data.mim, configured: false };
     try {
-      const res = await fetch(
-        `https://api.omim.org/api/entry?mimNumber=${data.mim}&include=text:description&format=json&apiKey=${key}`,
-      );
+      const publicUrl = `https://api.omim.org/api/entry?mimNumber=${data.mim}&include=text:description&format=json`;
+      const res = await fetch(`${publicUrl}&apiKey=${key}`);
       if (!res.ok) return { mim: data.mim, configured: true, error: `OMIM returned ${res.status}` };
       const json = (await res.json()) as any;
       const entry = json?.omim?.entryList?.[0]?.entry;
@@ -260,6 +297,10 @@ export const fetchOmim = createServerFn({ method: "GET" })
       return {
         mim: data.mim,
         configured: true,
+        provenance: prov(
+          `${publicUrl} (API key redacted)`,
+          [entry?.version ? `v${entry.version}` : null, entry?.dateUpdated ? `updated ${entry.dateUpdated}` : null].filter(Boolean).join(" · ") || null,
+        ),
         title: entry?.titles?.preferredTitle,
         summary: text ? text.replace(/\{[^}]*\}/g, "").slice(0, 1600) : undefined,
       };

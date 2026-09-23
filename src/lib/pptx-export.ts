@@ -3,6 +3,7 @@ import type { CaseState } from "@/lib/case-store";
 import { LAB_FIELDS } from "@/lib/case-store";
 import { links } from "@/lib/evidence-queries";
 import type { AlphaFoldInfo, ClinVarResult, UniProtInfo } from "@/lib/evidence.functions";
+import { fmtTime, type ProvRow } from "@/lib/provenance";
 import { describeVariant, parseVariant, substitutionContext } from "@/lib/variant";
 
 const INK = "16212B";
@@ -17,11 +18,12 @@ export type ExportInput = {
   uniprot?: UniProtInfo | undefined;
   alphafold?: AlphaFoldInfo | undefined;
   clinvar?: ClinVarResult | undefined;
+  provenance?: ProvRow[] | undefined;
 };
 
 const H = { header: "Georgia", body: "Calibri" };
 
-export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: ExportInput) {
+export async function buildDeck({ state, gene, uniprot, alphafold, clinvar, provenance }: ExportInput) {
   const PptxGenJS = (await import("pptxgenjs")).default;
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_16x9";
@@ -249,6 +251,31 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar }: Ex
       hyperlink: { url: c.link },
     });
   });
+
+  /* ---------- 7. Evidence provenance ---------- */
+  if (provenance?.length) {
+    const s7 = pptx.addSlide();
+    slideTitle(s7, "Evidence provenance");
+    const hdr = (t: string) => ({ text: t, options: { bold: true, color: WHITE, fill: { color: INK } } });
+    const rows: any[] = [[hdr("Source"), hdr("Retrieved"), hdr("Record version"), hdr("Fields on these slides")]];
+    for (const p of provenance) {
+      const used = p.fields.filter((f) => f.usedIn.includes("slides"))
+        .map((f) => `${f.field}: ${f.value.length > 60 ? `${f.value.slice(0, 60)}…` : f.value}`).join("\n");
+      rows.push([
+        { text: `${p.source}\n(${p.kind})`, options: { hyperlink: { url: p.viewUrl } } },
+        fmtTime(p.retrievedAt),
+        p.recordVersion || "not reported",
+        used || "—",
+      ]);
+    }
+    s7.addTable(rows, {
+      x: 0.5, y: 1.1, w: 9.0, colW: [1.4, 1.5, 2.3, 3.8], fontFace: H.body, fontSize: 7.5, color: INK,
+      border: { type: "solid", pt: 0.5, color: "D5CFC4" }, valign: "top",
+    });
+    s7.addText("Full request URLs and all evaluation fields are listed in the app's provenance panel.", {
+      x: 0.5, y: 5.2, w: 9.0, h: 0.3, fontFace: H.body, fontSize: 9, color: SLATE,
+    });
+  }
 
   await pptx.writeFile({
     fileName: `${gene.symbol}_${(variantText || "variant").replace(/[^\w.-]/g, "")}_board.pptx`,

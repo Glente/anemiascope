@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { ProvenancePanel } from "@/components/ProvenancePanel";
+import { buildProvenance } from "@/lib/provenance";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -513,6 +515,18 @@ function Workspace() {
               )}
             </EvidenceCard>
           </div>
+
+          <ProvenancePanel
+            rows={buildProvenance({
+              gene,
+              state,
+              parsed,
+              uniprot: uniprot.data,
+              alphafold: alphafold.data,
+              clinvar: clinvar.data,
+              omim: omim.data,
+            })}
+          />
 
           <Card>
             <CardContent className="flex flex-wrap items-center gap-3 py-4 text-sm">

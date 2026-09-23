@@ -72,7 +72,7 @@ export function parseVariant(input: string): ParsedVariant {
   if (result.consequence === "Unclassified" && result.refAa && result.altAa) {
     result.consequence = result.refAa === result.altAa ? "Synonymous" : "Missense";
   }
-  if (result.consequence === "Unclassified" && result.cdna && !result.residue) {
+  if (result.consequence === "Unclassified" && result.cdna) {
     result.consequence = "Nucleotide-level variant";
   }
 

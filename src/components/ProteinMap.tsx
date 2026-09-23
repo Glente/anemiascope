@@ -17,6 +17,7 @@ const LANES = ["Domain", "Region", "Transmembrane", "Motif", "Binding site", "Ac
 export function ProteinMap({
   info,
   residue,
+  extra,
   altAa,
   geneSymbol,
   tx,
@@ -30,6 +31,7 @@ export function ProteinMap({
   onReset: () => void;
   info?: UniProtInfo | undefined;
   residue?: number | undefined;
+  extra?: number[] | undefined;
   altAa?: string | null | undefined;
   geneSymbol: string;
 }) {
@@ -65,7 +67,7 @@ export function ProteinMap({
       </CardHeader>
       <CardContent className="space-y-4">
         {tx?.exons.length ? (
-          <GeneSchematic tx={tx} focus={focus} variant={residue} onSelect={onSelect} />
+          <GeneSchematic tx={tx} focus={focus} variant={residue} extra={extra} onSelect={onSelect} />
         ) : tx?.error ? (
           <p className="text-xs text-muted-foreground">Gene structure unavailable: {tx.error}</p>
         ) : null}
@@ -124,6 +126,16 @@ export function ProteinMap({
               </text>
             </g>
           )}
+          {(extra ?? []).filter((r) => r <= len).map((r) => (
+            <g key={r}>
+              <line x1={x(r)} x2={x(r)} y1={24} y2={H - 22} stroke="var(--primary)" strokeWidth={2} />
+              <circle cx={x(r)} cy={37} r={6} fill="var(--primary)" stroke="var(--background)" strokeWidth={2} />
+              <text x={Math.min(W - 60, Math.max(60, x(r)))} y={H - 6} fontSize={12} fontWeight={600}
+                textAnchor="middle" fill="var(--primary)">
+                {`${info!.sequence?.[r - 1] ?? "?"}${r}`}
+              </text>
+            </g>
+          ))}
         </svg>
 
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -140,7 +152,7 @@ export function ProteinMap({
         </div>
 
         {info!.sequence && (
-          <CodingStrip cds={tx?.cds ?? ""} protein={info!.sequence} focus={focus} variant={residue} onSelect={onSelect} />
+          <CodingStrip cds={tx?.cds ?? ""} protein={info!.sequence} focus={focus} variant={residue} extra={extra} onSelect={onSelect} />
         )}
       </CardContent>
     </Card>

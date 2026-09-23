@@ -313,7 +313,7 @@ function Workspace() {
                 <div className="rounded-md border bg-muted/40 p-3 text-xs">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge>{parsed.consequence}</Badge>
-                    {residue && <Badge variant="outline">Residue {residue}</Badge>}
+                    {residue && <Badge variant="outline">{parsed.extraResidues?.length ? `Residues ${[residue, ...parsed.extraResidues].join(", ")}` : `Residue ${residue}`}</Badge>}
                     {parsed.refAa && parsed.altAa && (
                       <Badge variant="outline">{describeVariant(parsed)}</Badge>
                     )}
@@ -346,6 +346,7 @@ function Workspace() {
           <ProteinMap
             info={uniprot.data}
             residue={residue}
+            extra={parsed.extraResidues}
             altAa={parsed.altAa}
             geneSymbol={gene.symbol}
             tx={transcript.data}
@@ -406,6 +407,7 @@ function Workspace() {
                   <StructureViewer
                     accession={gene.uniprot}
                     residue={residue}
+                    extra={parsed.extraResidues}
                     colorTheme={colorTheme}
                     focus={focus}
                     onPick={(r) => selectionStore.set(r)}

@@ -16,6 +16,8 @@ export type ParsedVariant = {
   consequence: string;
   protein?: string;
   cdna?: string;
+  /** Additional residues for multi-change alleles, e.g. c.[19G>A;295G>A] */
+  extraResidues?: number[];
 };
 
 /**
@@ -67,6 +69,21 @@ export function parseVariant(input: string): ParsedVariant {
   if (!result.residue) {
     const pos = (result.cdna ?? "").match(/^c\.(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
     if (pos && Number(pos[1]) > 0) result.residue = Math.ceil(Number(pos[1]) / 3);
+  }
+
+  // Multi-change allele: c.[19G>A;295G>A]
+  const multi = (result.cdna ?? "").match(/^c\.\[(.+)\]$/) ?? raw.match(/c\.\[([^\]]+)\]/);
+  if (multi) {
+    const rs = multi[1]!.split(/\s*;\s*/).map((part) => {
+      const m = part.trim().match(/^(?:c\.)?(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
+      return m ? Math.ceil(Number(m[1]) / 3) : 0;
+    }).filter((n) => n > 0);
+    const uniq = [...new Set(rs)];
+    if (uniq.length) {
+      result.residue = uniq[0]!;
+      if (uniq.length > 1) result.extraResidues = uniq.slice(1);
+      result.cdna = `c.[${multi[1]}]`;
+    }
   }
 
   if (result.consequence === "Unclassified" && result.refAa && result.altAa) {

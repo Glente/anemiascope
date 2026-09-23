@@ -12,11 +12,12 @@ const CODON: Record<string, string> = (() => {
 type SyncProps = {
   focus: number | null;
   variant?: number | undefined;
+  extra?: number[] | undefined;
   onSelect: (r: number) => void;
 };
 
 /* ---------------- Gene schematic ---------------- */
-export function GeneSchematic({ tx, focus, variant, onSelect }: SyncProps & { tx: TranscriptInfo }) {
+export function GeneSchematic({ tx, focus, variant, extra, onSelect }: SyncProps & { tx: TranscriptInfo }) {
   if (!tx.exons.length) return null;
   const W = 1000, L = 10, R = 10;
   const intron = Math.min(14, 300 / tx.exons.length);
@@ -46,6 +47,7 @@ export function GeneSchematic({ tx, focus, variant, onSelect }: SyncProps & { tx
   };
   const fx = focus ? cdsX(focus) : null;
   const vx = variant ? cdsX(variant) : null;
+  const exs = (extra ?? []).map((r) => cdsX(r)).filter((v): v is number => v != null);
   const fe = focus ? codonExon(focus) : undefined;
 
   return (
@@ -84,6 +86,7 @@ export function GeneSchematic({ tx, focus, variant, onSelect }: SyncProps & { tx
           );
         })}
         {vx != null && <path d={`M${vx - 5},4 L${vx + 5},4 L${vx},12 Z`} fill="var(--destructive)" />}
+        {exs.map((ex, i) => <path key={i} d={`M${ex - 5},4 L${ex + 5},4 L${ex},12 Z`} fill="var(--destructive)" />)}
         {fx != null && <line x1={fx} x2={fx} y1={10} y2={38} stroke="var(--foreground)" strokeWidth={2} />}
       </svg>
     </div>
@@ -92,7 +95,7 @@ export function GeneSchematic({ tx, focus, variant, onSelect }: SyncProps & { tx
 
 /* ---------------- Coding sequence + protein strip ---------------- */
 export function CodingStrip({
-  cds, protein, focus, variant, onSelect,
+  cds, protein, focus, variant, extra, onSelect,
 }: SyncProps & { cds: string; protein: string }) {
   const len = protein.length || Math.floor(cds.length / 3);
   const center = focus ?? variant ?? 1;
@@ -118,7 +121,7 @@ export function CodingStrip({
             const codon = cds.slice(3 * r - 3, 3 * r);
             const aa = protein[r - 1] ?? "";
             const tr = CODON[codon] ?? "?";
-            const isF = r === focus, isV = r === variant;
+            const isF = r === focus, isV = r === variant || !!extra?.includes(r);
             return (
               <button key={r} type="button" onClick={() => onSelect(r)}
                 title={`c.${3 * r - 2}_${3 * r} ${codon} → ${threeLetter(aa)}${r}${tr !== aa && codon ? " (CDS/UniProt mismatch)" : ""}`}

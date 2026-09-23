@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ClientOnly } from "@tanstack/react-router";
-import { Suspense, lazy, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Camera,
@@ -16,6 +16,7 @@ import { AppShell } from "@/components/AppShell";
 import { ProteinMap } from "@/components/ProteinMap";
 import { ProvenancePanel } from "@/components/ProvenancePanel";
 import { buildProvenance } from "@/lib/provenance";
+import { selectionStore, useSelectedResidue } from "@/lib/selection-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,7 @@ import {
   clinVarQuery,
   links,
   omimQuery,
+  transcriptQuery,
   uniProtQuery,
 } from "@/lib/evidence-queries";
 import { describeVariant, parseVariant, substitutionContext } from "@/lib/variant";
@@ -78,6 +80,10 @@ function Workspace() {
   const parsed = useMemo(() => parseVariant(state.variantInput), [state.variantInput]);
   const residue = parsed.residue;
   const [colorTheme, setColorTheme] = useState("chain-id");
+  const selected = useSelectedResidue();
+  useEffect(() => selectionStore.set(null), [residue, gene.symbol]);
+  const focus = selected ?? residue ?? null;
+  const transcript = useQuery(transcriptQuery(gene.symbol));
   const snapshotRef = useRef<(() => Promise<string | null>) | null>(null);
 
   const uniprot = useQuery(uniProtQuery(gene.uniprot, residue));
@@ -278,7 +284,16 @@ function Workspace() {
 
         {/* Right column: structure + evidence */}
         <div className="space-y-4">
-          <ProteinMap info={uniprot.data} residue={residue} altAa={parsed.altAa} geneSymbol={gene.symbol} />
+          <ProteinMap
+            info={uniprot.data}
+            residue={residue}
+            altAa={parsed.altAa}
+            geneSymbol={gene.symbol}
+            tx={transcript.data}
+            focus={focus}
+            onSelect={(r) => selectionStore.set(r)}
+            onReset={() => selectionStore.set(null)}
+          />
 
           <Card>
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pb-3">
@@ -326,6 +341,8 @@ function Workspace() {
                     accession={gene.uniprot}
                     residue={residue}
                     colorTheme={colorTheme}
+                    focus={focus}
+                    onPick={(r) => selectionStore.set(r)}
                     registerSnapshot={(fn) => {
                       snapshotRef.current = fn;
                     }}

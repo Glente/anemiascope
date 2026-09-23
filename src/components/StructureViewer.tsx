@@ -5,6 +5,8 @@ type Props = {
   accession: string;
   residue?: number | undefined;
   colorTheme: string;
+  focus?: number | null | undefined;
+  onPick?: (residue: number) => void;
   onSnapshot?: (dataUri: string) => void;
   registerSnapshot?: (fn: (() => Promise<string | null>) | null) => void;
 };
@@ -13,8 +15,13 @@ export default function StructureViewer({
   accession,
   residue,
   colorTheme,
+  focus,
+  onPick,
   registerSnapshot,
 }: Props) {
+  const [loadedKey, setLoadedKey] = useState(0);
+  const onPickRef = useRef(onPick);
+  onPickRef.current = onPick;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const pluginRef = useRef<any>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -52,6 +59,17 @@ export default function StructureViewer({
         return;
       }
       pluginRef.current = plugin;
+      const [{ StructureElement, StructureProperties }] = await Promise.all([
+        import("molstar/lib/mol-model/structure"),
+      ]);
+      plugin.behaviors.interaction.click.subscribe((e: any) => {
+        const loci = e?.current?.loci;
+        if (!loci || !StructureElement.Loci.is(loci) || StructureElement.Loci.isEmpty(loci)) return;
+        const loc = StructureElement.Loci.getFirstLocation(loci);
+        if (!loc) return;
+        const seq = StructureProperties.residue.label_seq_id(loc);
+        if (seq) onPickRef.current?.(seq);
+      });
       registerSnapshot?.(async () => {
         const helper = pluginRef.current?.helpers?.viewportScreenshot;
         if (!helper) return null;
@@ -107,69 +125,10 @@ export default function StructureViewer({
           }
         });
 
-        if (residue) {
-          const [{ StructureSelectionQuery }, { MolScriptBuilder: MS }, { Script }, { StructureSelection }] =
-            await Promise.all([
-              import("molstar/lib/mol-plugin-state/helpers/structure-selection-query"),
-              import("molstar/lib/mol-script/language/builder"),
-              import("molstar/lib/mol-script/script"),
-              import("molstar/lib/mol-model/structure"),
-            ]);
-
-          const expression = MS.struct.generator.atomGroups({
-            "residue-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.label_seq_id(), residue]),
-            "group-by": MS.struct.atomProperty.macromolecular.residueKey(),
-          });
-          const query = StructureSelectionQuery(`Residue ${residue}`, expression);
-
-          await plugin.managers.structure.component.add(
-            {
-              selection: query,
-              options: { checkExisting: false, label: `Variant residue ${residue}` },
-              representation: "ball-and-stick",
-            },
-            plugin.managers.structure.hierarchy.current.structures,
-          );
-
-          const surroundings = StructureSelectionQuery(
-            `Within 5 A of residue ${residue}`,
-            MS.struct.modifier.includeSurroundings({
-              0: expression,
-              radius: 5,
-              "as-whole-residues": true,
-            }),
-          );
-          await plugin.managers.structure.component.add(
-            {
-              selection: surroundings,
-              options: { checkExisting: false, label: `Contacts within 5 Å` },
-              representation: "ball-and-stick",
-            },
-            plugin.managers.structure.hierarchy.current.structures,
-          );
-
-          const structure = plugin.managers.structure.hierarchy.current.structures[0]?.cell?.obj?.data;
-          if (structure) {
-            const sel = Script.getStructureSelection(
-              (Q: any) =>
-                Q.struct.generator.atomGroups({
-                  "residue-test": Q.core.rel.eq([
-                    Q.struct.atomProperty.macromolecular.label_seq_id(),
-                    residue,
-                  ]),
-                }),
-              structure,
-            );
-            const loci = StructureSelection.toLociWithSourceUnits(sel);
-            if (!StructureSelection.isEmpty(sel)) {
-              plugin.managers.interactivity.lociSelects.selectOnly({ loci });
-              plugin.managers.camera.focusLoci(loci, { extraRadius: 14, minRadius: 12 });
-            }
-          }
-        }
         if (!cancelled) {
           setStatus("ready");
           setMessage("");
+          setLoadedKey((k) => k + 1);
         }
       } catch (e) {
         if (!cancelled) {
@@ -184,7 +143,71 @@ export default function StructureViewer({
     return () => {
       cancelled = true;
     };
-  }, [accession, residue, colorTheme]);
+  }, [accession, colorTheme]);
+
+  // Highlight focus + variant residues without reloading the model
+  useEffect(() => {
+    const plugin = pluginRef.current;
+    if (!plugin || !loadedKey) return;
+    let cancelled = false;
+    (async () => {
+      const [{ StructureSelectionQuery }, { MolScriptBuilder: MS }, { Script }, { StructureSelection }] =
+        await Promise.all([
+          import("molstar/lib/mol-plugin-state/helpers/structure-selection-query"),
+          import("molstar/lib/mol-script/language/builder"),
+          import("molstar/lib/mol-script/script"),
+          import("molstar/lib/mol-model/structure"),
+        ]);
+      if (cancelled) return;
+      const structures = plugin.managers.structure.hierarchy.current.structures;
+      const old = structures.flatMap((s: any) =>
+        s.components.filter((c: any) => String(c.cell?.obj?.label ?? "").startsWith("sync:")),
+      );
+      if (old.length) await plugin.managers.structure.hierarchy.remove(old);
+
+      const resExpr = (r: number) =>
+        MS.struct.generator.atomGroups({
+          "residue-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.label_seq_id(), r]),
+          "group-by": MS.struct.atomProperty.macromolecular.residueKey(),
+        });
+      const add = (label: string, expr: any) =>
+        plugin.managers.structure.component.add(
+          {
+            selection: StructureSelectionQuery(label, expr),
+            options: { checkExisting: false, label },
+            representation: "ball-and-stick",
+          },
+          plugin.managers.structure.hierarchy.current.structures,
+        );
+
+      if (residue) await add(`sync: variant residue ${residue}`, resExpr(residue));
+      const target = focus ?? residue;
+      if (!target) return;
+      if (target !== residue) await add(`sync: selected residue ${target}`, resExpr(target));
+      await add(
+        `sync: contacts within 5 Å of ${target}`,
+        MS.struct.modifier.includeSurroundings({ 0: resExpr(target), radius: 5, "as-whole-residues": true }),
+      );
+      const structure = plugin.managers.structure.hierarchy.current.structures[0]?.cell?.obj?.data;
+      if (structure && !cancelled) {
+        const sel = Script.getStructureSelection(
+          (Q: any) =>
+            Q.struct.generator.atomGroups({
+              "residue-test": Q.core.rel.eq([Q.struct.atomProperty.macromolecular.label_seq_id(), target]),
+            }),
+          structure,
+        );
+        if (!StructureSelection.isEmpty(sel)) {
+          const loci = StructureSelection.toLociWithSourceUnits(sel);
+          plugin.managers.interactivity.lociSelects.selectOnly({ loci });
+          plugin.managers.camera.focusLoci(loci, { extraRadius: 14, minRadius: 12 });
+        }
+      }
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [loadedKey, residue, focus]);
 
   return (
     <div className="relative h-[460px] w-full overflow-hidden rounded-lg border bg-card">

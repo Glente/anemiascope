@@ -109,39 +109,42 @@ export function GeneSearch({ value, onChange }: Props) {
             <p className="px-2 py-3 text-xs text-muted-foreground">
               No gene found for “{query}”. Try a symbol like G6PD, HBB, or ANK1.
             </p>
-          ) : query.trim() === "" ? (
-            <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              All genes — type to filter
-            </p>
-          ) : null}
-            (Object.keys(grouped) as GeneCategory[]).map((cat) =>
-              grouped[cat].length === 0 ? null : (
-                <div key={cat} className="mb-1">
-                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {CATEGORY_LABEL[cat]}
-                  </p>
-                  {grouped[cat].map((g) => {
-                    runningIndex++;
-                    const idx = runningIndex;
-                    const isActive = idx === activeIndex;
-                    return (
-                      <button
-                        key={g.symbol}
-                        type="button"
-                        className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition-colors ${
-                          isActive ? "bg-accent" : "hover:bg-accent/50"
-                        }`}
-                        onClick={() => selectGene(g.symbol)}
-                        onMouseEnter={() => setActiveIndex(idx)}
-                      >
-                        <span className="font-medium">{g.symbol}</span>
-                        <span className="text-muted-foreground">{g.protein}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ),
-            )
+          ) : (
+            <>
+              {query.trim() === "" && (
+                <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  All genes — type to filter
+                </p>
+              )}
+              {(Object.keys(grouped) as GeneCategory[]).map((cat) =>
+                grouped[cat].length === 0 ? null : (
+                  <div key={cat} className="mb-1">
+                    <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {CATEGORY_LABEL[cat]}
+                    </p>
+                    {grouped[cat].map((g) => {
+                      runningIndex++;
+                      const idx = runningIndex;
+                      const isActive = idx === activeIndex;
+                      return (
+                        <button
+                          key={g.symbol}
+                          type="button"
+                          className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition-colors ${
+                            isActive ? "bg-accent" : "hover:bg-accent/50"
+                          }`}
+                          onClick={() => selectGene(g.symbol)}
+                          onMouseEnter={() => setActiveIndex(idx)}
+                        >
+                          <span className="font-medium">{g.symbol}</span>
+                          <span className="text-muted-foreground">{g.protein}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ),
+              )}
+            </>
           )}
         </div>
       )}

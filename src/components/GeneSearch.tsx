@@ -109,7 +109,11 @@ export function GeneSearch({ value, onChange }: Props) {
             <p className="px-2 py-3 text-xs text-muted-foreground">
               No gene found for “{query}”. Try a symbol like G6PD, HBB, or ANK1.
             </p>
-          ) : (
+          ) : query.trim() === "" ? (
+            <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              All genes — type to filter
+            </p>
+          ) : null}
             (Object.keys(grouped) as GeneCategory[]).map((cat) =>
               grouped[cat].length === 0 ? null : (
                 <div key={cat} className="mb-1">

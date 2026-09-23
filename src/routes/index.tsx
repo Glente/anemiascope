@@ -15,6 +15,7 @@ import {
 
 import { AppShell } from "@/components/AppShell";
 import { GeneSearch } from "@/components/GeneSearch";
+import { IthaSearch } from "@/components/IthaSearch";
 import { ProteinMap } from "@/components/ProteinMap";
 import { ProvenancePanel } from "@/components/ProvenancePanel";
 import { buildProvenance } from "@/lib/provenance";
@@ -232,30 +233,7 @@ function Workspace() {
                 />
               </div>
 
-              <form
-                className="space-y-1.5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void loadIthaId(ithaInput.trim());
-                }}
-              >
-                <Label htmlFor="ithaid">IthaID (ITHANET)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="ithaid"
-                    inputMode="numeric"
-                    placeholder="e.g. 824 for HbS"
-                    value={ithaInput}
-                    onChange={(e) => setIthaInput(e.target.value.replace(/\D/g, ""))}
-                  />
-                  <Button type="submit" variant="outline" disabled={!ithaInput || ithaLoading}>
-                    {ithaLoading ? "Loading…" : "Load"}
-                  </Button>
-                </div>
-                {state.ithaId && (
-                  <p className="text-xs text-muted-foreground">Loaded from IthaID {state.ithaId}</p>
-                )}
-              </form>
+              <IthaSearch loading={ithaLoading} loadedId={state.ithaId} onLoad={(id) => void loadIthaId(id)} />
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">

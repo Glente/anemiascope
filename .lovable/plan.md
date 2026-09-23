@@ -22,8 +22,18 @@ A single-workspace web tool for evaluating red cell membrane, enzyme and hemoglo
 - Colour modes: pLDDT confidence or chain colour. Reset/focus controls and a snapshot button that captures the current camera view as an image.
 
 **4. Patient details and PowerPoint export**
-- Form for clinical details (age, sex, ethnicity, presentation, transfusion history, splenectomy, family history) and lab values (Hb, MCV, MCHC, reticulocytes, bilirubin, LDH, haptoglobin, ferritin, DAT/Coombs, osmotic gradient ektacytometry, enzyme activity, HPLC fractions).
+- Form for clinical details (age band, sex, presentation, transfusion history, splenectomy, family history) and lab values (Hb, MCV, MCHC, reticulocytes, bilirubin, LDH, haptoglobin, ferritin, DAT/Coombs, osmotic gradient ektacytometry, enzyme activity, HPLC fractions).
 - One click builds a .pptx: title slide, patient summary, lab table with flagged out-of-range values, variant impact slide, the captured 3D structure image, and evidence cards with source links. Downloads straight to your machine.
+
+## Patient data stays on your own machine
+
+You are right — no patient data is stored on a server.
+
+- Everything you type into the patient form lives only in your browser tab's memory and is cleared when you close or reload the tab. Nothing is written to a database, a server or a log.
+- The finished PowerPoint file is assembled inside your browser and saved directly to your computer. It is never uploaded.
+- The fields are labelled for pseudonymised use: a free-text case label (e.g. "Case 1" or a local study ID), age band rather than date of birth, and no name/CPR fields at all.
+- Only the gene and variant you look up are sent outward, as ordinary lookups to the public databases (UniProt, AlphaFold, ClinVar, OMIM, Orphanet). Those requests never include anything from the patient form.
+- A visible "Clear all patient data" button, plus a warning if you try to leave with data still entered.
 
 ## Notes on data accuracy
 
@@ -31,7 +41,7 @@ Curated gene facts (MIM, ORPHA, UniProt accessions, canonical variants) come fro
 
 ## Technical outline
 
-- Routes: `/` workspace (gene + variant + evidence + structure), `/patient` clinical form, `/export` review and download. Shared state in a client store persisted to local storage.
+- Routes: `/` workspace (gene + variant + evidence + structure), `/patient` clinical form, `/export` review and download. Shared state in an in-memory client store — no `localStorage`, no persistence, no backend table for patient fields.
 - `molstar` loaded client-side only (dynamic import behind a hydration gate); AlphaFold mmCIF from `alphafold.ebi.ac.uk/files/AF-<acc>-F1-model_v4.cif`.
-- UniProt/AlphaFold/ClinVar fetched through server functions to avoid CORS and to cache; OMIM key stored as a backend secret via Lovable Cloud (enabled for secret storage only, no database needed initially).
-- `pptxgenjs` for export, run in the browser with the Mol* canvas snapshot embedded as base64.
+- UniProt/AlphaFold/ClinVar fetched through server functions (gene/variant identifiers only) to avoid CORS; OMIM key stored as a backend secret via Lovable Cloud, enabled for secret storage only — no database.
+- `pptxgenjs` for export, run entirely in the browser with the Mol* canvas snapshot embedded as base64.

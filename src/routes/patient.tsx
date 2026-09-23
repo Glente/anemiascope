@@ -117,6 +117,8 @@ function PatientPage() {
   );
 }
 
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 function Field({
   label,
   value,
@@ -128,10 +130,11 @@ function Field({
   onChange: (v: string) => void;
   placeholder?: string;
 }) {
+  const id = slug(label);
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
-      <Input value={value} placeholder={placeholder ?? ""} onChange={(e) => onChange(e.target.value)} />
+      <Label htmlFor={id} className="text-xs">{label}</Label>
+      <Input id={id} value={value} placeholder={placeholder ?? ""} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
@@ -147,10 +150,12 @@ function AreaField({
   onChange: (v: string) => void;
   placeholder?: string;
 }) {
+  const id = slug(label);
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
+      <Label htmlFor={id} className="text-xs">{label}</Label>
       <Textarea
+        id={id}
         rows={3}
         value={value}
         placeholder={placeholder ?? ""}

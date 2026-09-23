@@ -11,6 +11,7 @@ export type CaseState = {
   geneSymbol: string;
   variantInput: string;
   presetLabel: string;
+  ithaId: string;
   zygosity: string;
   secondAllele: string;
   caseLabel: string;
@@ -51,6 +52,7 @@ const initial = (): CaseState => ({
   geneSymbol: "G6PD",
   variantInput: "",
   presetLabel: "",
+  ithaId: "",
   zygosity: "",
   secondAllele: "",
   caseLabel: "",
@@ -86,8 +88,8 @@ export const caseStore = {
     emit();
   },
   clearPatient() {
-    const { geneSymbol, variantInput, presetLabel, zygosity, secondAllele } = state;
-    state = { ...initial(), geneSymbol, variantInput, presetLabel, zygosity, secondAllele };
+    const { geneSymbol, variantInput, presetLabel, ithaId, zygosity, secondAllele } = state;
+    state = { ...initial(), geneSymbol, variantInput, presetLabel, ithaId, zygosity, secondAllele };
     emit();
   },
   clearAll() {

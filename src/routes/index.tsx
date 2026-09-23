@@ -301,7 +301,7 @@ function Workspace() {
                 <CardTitle className="text-base">AlphaFold structure</CardTitle>
                 <CardDescription>
                   {gene.protein} ({gene.uniprot})
-                  {residue ? ` — residue ${residue} highlighted` : " — enter a variant to highlight a residue"}
+                  {focus ? ` — residue ${focus} ${focus === residue ? "(variant) " : "selected "}highlighted${focus !== residue && residue ? `, variant ${residue} also shown` : ""}; click the model to pick a residue` : " — enter a variant or click a position to highlight a residue"}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">

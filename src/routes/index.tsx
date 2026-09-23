@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { GeneSearch } from "@/components/GeneSearch";
 import { ProteinMap } from "@/components/ProteinMap";
 import { ProvenancePanel } from "@/components/ProvenancePanel";
 import { buildProvenance } from "@/lib/provenance";
@@ -166,7 +167,7 @@ function Workspace() {
             <CardContent className="space-y-4">
               <GeneSearch
                 value={state.geneSymbol}
-                onChange={(v) =>
+                onChange={(v: string) =>
                   caseStore.set({ geneSymbol: v, variantInput: "", presetLabel: "", ithaId: "" })
                 }
               />

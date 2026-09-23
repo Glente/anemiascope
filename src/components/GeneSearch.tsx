@@ -66,7 +66,8 @@ export function GeneSearch({ value, onChange }: Props) {
     if (e.key === "Enter") {
       e.preventDefault();
       if (results.length > 0) {
-        selectGene(results[Math.min(activeIndex, results.length - 1)].symbol);
+        const match = results[Math.min(activeIndex, results.length - 1)];
+        if (match) selectGene(match.symbol);
       }
     } else if (e.key === "ArrowDown") {
       e.preventDefault();

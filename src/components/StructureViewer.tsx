@@ -4,6 +4,7 @@ import "molstar/build/viewer/molstar.css";
 type Props = {
   accession: string;
   residue?: number | undefined;
+  extra?: number[] | undefined;
   colorTheme: string;
   focus?: number | null | undefined;
   onPick?: (residue: number) => void;
@@ -14,6 +15,7 @@ type Props = {
 export default function StructureViewer({
   accession,
   residue,
+  extra,
   colorTheme,
   focus,
   onPick,
@@ -181,6 +183,7 @@ export default function StructureViewer({
         );
 
       if (residue) await add(`sync: variant residue ${residue}`, resExpr(residue));
+      for (const r of extra ?? []) await add(`sync: variant residue ${r}`, resExpr(r));
       const target = focus ?? residue;
       if (!target) return;
       if (target !== residue) await add(`sync: selected residue ${target}`, resExpr(target));
@@ -207,7 +210,7 @@ export default function StructureViewer({
     return () => {
       cancelled = true;
     };
-  }, [loadedKey, residue, focus]);
+  }, [loadedKey, residue, focus, (extra ?? []).join(",")]);
 
   return (
     <div className="relative h-[460px] w-full overflow-hidden rounded-lg border bg-card">

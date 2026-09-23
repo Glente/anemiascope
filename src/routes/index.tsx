@@ -346,6 +346,7 @@ function Workspace() {
           <ProteinMap
             info={uniprot.data}
             residue={residue}
+            extra={parsed.extraResidues}
             altAa={parsed.altAa}
             geneSymbol={gene.symbol}
             tx={transcript.data}
@@ -406,6 +407,7 @@ function Workspace() {
                   <StructureViewer
                     accession={gene.uniprot}
                     residue={residue}
+                    extra={parsed.extraResidues}
                     colorTheme={colorTheme}
                     focus={focus}
                     onPick={(r) => selectionStore.set(r)}

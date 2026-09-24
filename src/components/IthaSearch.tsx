@@ -21,6 +21,7 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const isNumber = /^\d{1,6}$/.test(q.trim());
+  const isShortHbName = /^hb\s*\S$/i.test(q.trim());
   const index = useQuery({
     queryKey: ["itha-index"],
     queryFn: async () => {
@@ -48,7 +49,7 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
 
   const results = useMemo(() => {
     const n = norm(q);
-    if (n.length < 2 || isNumber || !index.data) return [];
+    if ((n.length < 2 && !isShortHbName) || isNumber || !index.data) return [];
     const scored = index.data
       .map((e) => {
         const names = [e.hbName, e.commonName, e.hgvsName].map(norm);
@@ -60,7 +61,7 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score);
     return scored.slice(0, 30).map((x) => x.e);
-  }, [q, isNumber, index.data]);
+  }, [q, isNumber, isShortHbName, index.data]);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {

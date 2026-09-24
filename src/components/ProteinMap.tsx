@@ -39,7 +39,7 @@ export function ProteinMap({
   if (!len) return null;
   const W = 1000, L = 20, R = 20, inner = W - L - R;
   const x = (p: number) => L + ((p - 1) / Math.max(1, len - 1)) * inner;
-  const lanes = LANES.filter((t) => info.features.some((f) => f.type === t));
+  const lanes = LANES.filter((t) => info?.features.some((f) => f.type === t));
   const laneH = 18, top = 58;
   const H = top + lanes.length * laneH + 34;
   const ticks = Array.from({ length: 6 }, (_, i) => Math.round(1 + (i * (len - 1)) / 5));

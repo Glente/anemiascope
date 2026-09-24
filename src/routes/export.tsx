@@ -83,7 +83,7 @@ function ExportPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-4xl space-y-5">
+      <div className="mx-auto max-w-4xl space-y-4 sm:space-y-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Board slides</h1>
           <p className="text-sm text-muted-foreground">
@@ -97,7 +97,7 @@ function ExportPage() {
             <CardTitle className="text-base">What goes on the slides</CardTitle>
             <CardDescription>Empty fields are skipped automatically</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-3 px-4 text-sm sm:px-6">
             <Row label="Gene / variant">
               {gene.symbol} {state.variantInput ? describeVariant(parsed) : "—"}{" "}
               {state.zygosity && <Badge variant="outline">{state.zygosity}</Badge>}
@@ -156,13 +156,14 @@ function ExportPage() {
 
         <ProvenancePanel rows={provenance} />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button size="lg" onClick={onExport} disabled={busy}>
+        <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
+          <Button size="lg" onClick={onExport} disabled={busy} className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
             {busy ? "Building…" : "Download PowerPoint"}
           </Button>
           <Button
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={() => {
               caseStore.clearPatient();
               toast.success("Case and lab fields cleared.");
@@ -185,11 +186,11 @@ function ExportPage() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/60 pb-2 last:border-0">
-      <span className="w-36 shrink-0 text-xs uppercase tracking-wide text-muted-foreground">
+    <div className="grid gap-1 border-b border-border/60 pb-2 last:border-0 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center sm:gap-x-3">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
-      <span className="flex items-center gap-2">{children}</span>
+      <span className="flex min-w-0 flex-wrap items-center gap-2 break-words">{children}</span>
     </div>
   );
 }

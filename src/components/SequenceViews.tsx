@@ -52,14 +52,15 @@ export function GeneSchematic({ tx, focus, variant, extra, onSelect }: SyncProps
 
   return (
     <div>
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2 text-xs text-muted-foreground">
+      <div className="mb-1 grid gap-1 text-xs text-muted-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline sm:gap-2">
         <span className="uppercase tracking-wide">Gene · {tx.transcriptId}</span>
         <span>
           chr{tx.chromosome} ({tx.strand === 1 ? "+" : "−"} strand, {tx.assembly}) · {tx.exons.length} exons
           {fe ? ` · residue ${focus} in exon ${fe.e.rank}` : ""}
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} 54`} className="w-full cursor-pointer" role="img" aria-label="Exon structure">
+      <div className="overflow-x-auto pb-1">
+      <svg viewBox={`0 0 ${W} 54`} className="min-w-[700px] cursor-pointer sm:w-full sm:min-w-0" role="img" aria-label="Exon structure">
         <line x1={L} x2={W - R} y1={24} y2={24} stroke="var(--border)" strokeWidth={1.5} />
         {boxes.map(({ e, x, w }) => {
           const coding = e.cdsStart != null;
@@ -89,6 +90,7 @@ export function GeneSchematic({ tx, focus, variant, extra, onSelect }: SyncProps
         {exs.map((ex, i) => <path key={i} d={`M${ex - 5},4 L${ex + 5},4 L${ex},12 Z`} fill="var(--destructive)" />)}
         {fx != null && <line x1={fx} x2={fx} y1={10} y2={38} stroke="var(--foreground)" strokeWidth={2} />}
       </svg>
+      </div>
     </div>
   );
 }

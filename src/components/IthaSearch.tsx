@@ -63,7 +63,7 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
       }}
     >
       <Label htmlFor="ithaid">IthaID or hemoglobin name (ITHANET)</Label>
-      <div className="relative flex gap-2" ref={ref}>
+      <div className="relative grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]" ref={ref}>
         <Input
           id="ithaid"
           autoComplete="off"
@@ -81,11 +81,11 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
             else if (e.key === "Escape") setOpen(false);
           }}
         />
-        <Button type="submit" variant="outline" disabled={!q.trim() || loading}>
+        <Button type="submit" variant="outline" disabled={!q.trim() || loading} className="w-full sm:w-auto">
           {loading ? "Loading…" : "Load"}
         </Button>
         {open && !isNumber && q.trim().length >= 2 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border bg-popover p-1 shadow-md">
+          <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border bg-popover p-1 shadow-md sm:right-auto sm:w-[min(32rem,calc(100vw-3rem))]">
             {index.isLoading ? (
               <p className="px-2 py-3 text-xs text-muted-foreground">Loading ITHANET name list…</p>
             ) : results.length === 0 ? (

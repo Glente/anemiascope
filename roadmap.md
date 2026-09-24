@@ -1,6 +1,5 @@
 # Roadmap
 
-- [x] Make shared navigation and page spacing mobile-safe
-- [x] Adapt workspace controls, diagrams, structure view, and evidence panels
-- [x] Adapt patient and slide pages
-- [x] Verify mobile and desktop layouts in browser
+- [ ] Add persistent browser caching for the ITHANET name list
+- [ ] Show clear first-fetch progress and cache-ready states
+- [ ] Verify first and repeat searches in the browser

@@ -15,17 +15,17 @@ export function ProvenancePanel({ rows }: { rows: ProvRow[] }) {
           evaluation, on the slides, or both.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-4 sm:px-6">
         {rows.map((r) => (
           <div key={r.source} className="rounded-md border border-border/70 p-3 text-sm">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
               <span className="font-semibold">{r.source}</span>
-              <Badge variant="outline">{r.kind}</Badge>
+              <Badge variant="outline" className="justify-self-end sm:justify-self-auto">{r.kind}</Badge>
               <a
                 href={r.viewUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="ml-auto inline-flex items-center gap-1 text-xs underline underline-offset-2"
+                className="col-span-2 inline-flex items-center gap-1 text-xs underline underline-offset-2 sm:col-span-1 sm:ml-auto"
               >
                 Open record <ExternalLink className="h-3 w-3" />
               </a>
@@ -38,7 +38,8 @@ export function ProvenancePanel({ rows }: { rows: ProvRow[] }) {
               <dt className="text-muted-foreground">Record version</dt>
               <dd>{r.recordVersion || "not reported by source"}</dd>
             </dl>
-            <table className="mt-2 w-full text-xs">
+            <div className="mt-2 overflow-x-auto">
+            <table className="min-w-[32rem] w-full text-xs">
               <thead className="text-left text-muted-foreground">
                 <tr>
                   <th className="py-1 pr-2 font-normal">Field</th>
@@ -62,6 +63,7 @@ export function ProvenancePanel({ rows }: { rows: ProvRow[] }) {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         ))}
       </CardContent>

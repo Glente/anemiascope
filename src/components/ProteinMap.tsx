@@ -39,7 +39,7 @@ export function ProteinMap({
   if (!len) return null;
   const W = 1000, L = 20, R = 20, inner = W - L - R;
   const x = (p: number) => L + ((p - 1) / Math.max(1, len - 1)) * inner;
-  const lanes = LANES.filter((t) => info!.features.some((f) => f.type === t));
+  const lanes = LANES.filter((t) => info?.features.some((f) => f.type === t));
   const laneH = 18, top = 58;
   const H = top + lanes.length * laneH + 34;
   const ticks = Array.from({ length: 6 }, (_, i) => Math.round(1 + (i * (len - 1)) / 5));
@@ -47,15 +47,15 @@ export function ProteinMap({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <CardTitle className="text-base">Gene, coding sequence &amp; protein</CardTitle>
-          <div className="flex items-center gap-2 text-xs">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-xs sm:flex">
             <label htmlFor="focus-pos" className="text-muted-foreground">Position</label>
             <input id="focus-pos" type="number" min={1} max={len} value={focus ?? ""}
               onChange={(e) => { const v = Number(e.target.value); if (v >= 1 && v <= len) onSelect(v); }}
               className="h-7 w-20 rounded border bg-background px-2" />
             {residue && focus !== residue && (
-              <button type="button" onClick={onReset} className="rounded border px-2 py-1 hover:bg-muted">
+              <button type="button" onClick={onReset} className="col-span-2 rounded border px-2 py-1 hover:bg-muted sm:col-span-1">
                 Back to variant
               </button>
             )}
@@ -77,7 +77,8 @@ export function ProteinMap({
           </p>
         )}
         <p className="-mb-3 text-xs uppercase tracking-wide text-muted-foreground">Protein features</p>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full cursor-crosshair" role="img"
+        <div className="overflow-x-auto pb-1">
+        <svg viewBox={`0 0 ${W} ${H}`} className="min-w-[700px] cursor-crosshair sm:w-full sm:min-w-0" role="img"
           onClick={(ev) => {
             const rect = ev.currentTarget.getBoundingClientRect();
             const px = ((ev.clientX - rect.left) / rect.width) * W;
@@ -137,6 +138,7 @@ export function ProteinMap({
             </g>
           ))}
         </svg>
+        </div>
 
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           {lanes.map((t) => (

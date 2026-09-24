@@ -130,14 +130,14 @@ export function GeneSearch({ value, onChange }: Props) {
                         <button
                           key={g.symbol}
                           type="button"
-                          className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition-colors ${
+                          className={`grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition-colors ${
                             isActive ? "bg-accent" : "hover:bg-accent/50"
                           }`}
                           onClick={() => selectGene(g.symbol)}
                           onMouseEnter={() => setActiveIndex(idx)}
                         >
                           <span className="font-medium">{g.symbol}</span>
-                          <span className="text-muted-foreground">{g.protein}</span>
+                          <span className="truncate text-muted-foreground">{g.protein}</span>
                         </button>
                       );
                     })}

@@ -152,15 +152,15 @@ function Workspace() {
 
   return (
     <AppShell>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-4 sm:gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
         {/* Left column: selection */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Gene</CardTitle>
               <CardDescription>Target anemia panel</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 sm:px-6">
               <GeneSearch
                 value={state.geneSymbol}
                 onChange={(v: string) =>
@@ -188,7 +188,7 @@ function Workspace() {
               <CardTitle className="text-base">Variant</CardTitle>
               <CardDescription>Preset or free text (cDNA, protein, HGVS)</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 sm:px-6">
               {gene.presets.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {gene.presets.map((p) => (
@@ -235,7 +235,7 @@ function Workspace() {
 
               <IthaSearch loading={ithaLoading} loadedId={state.ithaId} onLoad={(id) => void loadIthaId(id)} />
 
-              <div className="grid grid-cols-2 gap-3">
+               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="zygosity">Zygosity</Label>
                   <Select
@@ -300,7 +300,7 @@ function Workspace() {
         </div>
 
         {/* Right column: structure + evidence */}
-        <div className="space-y-4">
+         <div className="min-w-0 space-y-4">
           <ProteinMap
             info={uniprot.data}
             residue={residue}
@@ -321,17 +321,17 @@ function Workspace() {
           />
 
           <Card>
-            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pb-3">
-              <div>
+            <CardHeader className="gap-3 pb-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <CardTitle className="text-base">AlphaFold structure</CardTitle>
                 <CardDescription>
                   {gene.protein} ({gene.uniprot})
                   {focus ? ` — residue ${focus} ${focus === residue ? "(variant) " : "selected "}highlighted${focus !== residue && residue ? `, variant ${residue} also shown` : ""}; click the model to pick a residue` : " — enter a variant or click a position to highlight a residue"}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="grid gap-2 sm:flex sm:items-center">
                 <Select value={colorTheme} onValueChange={setColorTheme}>
-                  <SelectTrigger className="w-[190px]">
+                  <SelectTrigger className="w-full sm:w-[190px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -341,23 +341,23 @@ function Workspace() {
                     <SelectItem value="hydrophobicity">Colour: hydrophobicity</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="secondary" onClick={capture}>
+                <Button variant="secondary" onClick={capture} className="w-full sm:w-auto">
                   <Camera className="mr-1.5 h-4 w-4" />
                   Capture for slides
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 px-4 sm:px-6">
               <ClientOnly
                 fallback={
-                  <div className="flex h-[460px] items-center justify-center rounded-lg border bg-muted/30 text-sm text-muted-foreground">
+                  <div className="flex h-[340px] items-center justify-center rounded-lg border bg-muted/30 text-sm text-muted-foreground sm:h-[460px]">
                     Preparing 3D viewer…
                   </div>
                 }
               >
                 <Suspense
                   fallback={
-                    <div className="flex h-[460px] items-center justify-center rounded-lg border bg-muted/30 text-sm text-muted-foreground">
+                    <div className="flex h-[340px] items-center justify-center rounded-lg border bg-muted/30 text-sm text-muted-foreground sm:h-[460px]">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading Mol* viewer…
                     </div>
                   }

@@ -213,7 +213,7 @@ export default function StructureViewer({
   }, [loadedKey, residue, focus, (extra ?? []).join(",")]);
 
   return (
-    <div className="relative h-[460px] w-full overflow-hidden rounded-lg border bg-card">
+    <div className="relative h-[340px] w-full overflow-hidden rounded-lg border bg-card sm:h-[460px]">
       <div ref={hostRef} className="absolute inset-0" />
       {status !== "ready" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-card/80 px-6 text-center text-sm text-muted-foreground">

@@ -67,7 +67,7 @@ export function GlobinEvidence({
               : "Enter a cDNA change (c.…) or an IthaID to pull ITHANET and HbVar records"}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="space-y-4 px-4 text-sm sm:px-6">
         {others.length > 0 && (
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Other IthaGenes entries containing this change:</p>
@@ -100,7 +100,7 @@ export function GlobinEvidence({
                   {i.hbName || i.commonName}
                   {i.synonyms.length ? <span className="text-muted-foreground"> ({i.synonyms.join(", ")})</span> : null}
                 </p>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                 <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs [&_dd]:break-words">
                   <Row k="HGVS" v={i.hgvsName} />
                   <Row k="Common name" v={i.commonName} />
                   <Row k="Protein" v={i.proteinName} />
@@ -159,7 +159,7 @@ export function GlobinEvidence({
                 <p className="font-medium">
                   {h.name} <span className="text-muted-foreground">· {h.proteinChange}</span>
                 </p>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                 <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs [&_dd]:break-words">
                   <Row k="HbVar ID" v={h.hbvarId} />
                   <Row k="HGVS" v={h.hgvsName} />
                   <Row k="Category" v={h.category} />

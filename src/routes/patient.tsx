@@ -42,8 +42,8 @@ function PatientPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-4xl space-y-5">
-        <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+      <div className="mx-auto max-w-4xl space-y-4 sm:space-y-5">
+        <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm sm:p-4">
           <Lock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <div>
             <p className="font-medium">This case stays in your browser tab</p>
@@ -60,7 +60,7 @@ function PatientPage() {
             <CardTitle className="text-base">Clinical details</CardTitle>
             <CardDescription>Pseudonymised — no identifying fields</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="grid gap-4 px-4 sm:grid-cols-2 sm:px-6">
             <Field label="Case label" value={state.caseLabel} onChange={(v) => caseStore.set({ caseLabel: v })} placeholder="Case 1 / local study ID" />
             <Field label="Age band" value={state.ageBand} onChange={(v) => caseStore.set({ ageBand: v })} placeholder="e.g. 20–29 years" />
             <Field label="Sex" value={state.sex} onChange={(v) => caseStore.set({ sex: v })} placeholder="Female / Male" />
@@ -80,7 +80,7 @@ function PatientPage() {
             <CardTitle className="text-base">Hematology labs</CardTitle>
             <CardDescription>Leave blank what you do not have — blanks are skipped on the slides</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <CardContent className="grid gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
             {LAB_FIELDS.map((f) => (
               <div key={f.key} className="space-y-1.5">
                 <Label htmlFor={f.key} className="text-xs">
@@ -97,12 +97,13 @@ function PatientPage() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button asChild>
+        <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
+          <Button asChild className="w-full sm:w-auto">
             <Link to="/export">Continue to board slides</Link>
           </Button>
           <Button
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={() => {
               caseStore.clearPatient();
               toast.success("Case and lab fields cleared.");

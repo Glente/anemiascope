@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Make shared navigation and page spacing mobile-safe
-- [ ] Adapt workspace controls, diagrams, structure view, and evidence panels
-- [ ] Adapt patient and slide pages
-- [ ] Verify mobile and desktop layouts in browser
+- [x] Make shared navigation and page spacing mobile-safe
+- [x] Adapt workspace controls, diagrams, structure view, and evidence panels
+- [x] Adapt patient and slide pages
+- [x] Verify mobile and desktop layouts in browser

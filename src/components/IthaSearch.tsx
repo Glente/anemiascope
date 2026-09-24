@@ -24,7 +24,10 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
   const index = useQuery({
     queryKey: ["itha-index"],
     queryFn: async () => {
+      const startedAt = Date.now();
       const entries = await listIthaIndex();
+      const remaining = 700 - (Date.now() - startedAt);
+      if (remaining > 0) await new Promise((resolve) => window.setTimeout(resolve, remaining));
       writeIthaIndexCache(entries);
       setCacheSource("fetched");
       return entries;

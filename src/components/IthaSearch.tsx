@@ -113,16 +113,7 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
         {open && !isNumber && q.trim().length >= 2 && (
           <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-auto rounded-md border bg-popover p-1 shadow-md sm:right-auto sm:w-[min(32rem,calc(100vw-3rem))]">
             {!cacheChecked || index.isLoading ? (
-              <div className="space-y-2 px-3 py-3 text-xs text-muted-foreground" role="status" aria-live="polite">
-                <span className="flex items-center gap-2 font-medium text-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                  Fetching the ITHANET name list…
-                </span>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-2/3 animate-pulse rounded-full bg-primary" />
-                </div>
-                <p>The first fetch can take about 15 seconds. Later searches use the saved copy.</p>
-              </div>
+              <p className="px-2 py-3 text-xs text-muted-foreground">Preparing ITHANET names…</p>
             ) : results.length === 0 ? (
               <p className="px-2 py-3 text-xs text-muted-foreground">No ITHANET entry named “{q}”.</p>
             ) : (
@@ -146,6 +137,18 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
           </div>
         )}
       </div>
+      {q.trim().length >= 2 && !isNumber && (!cacheChecked || index.isLoading) && (
+        <div className="space-y-2 rounded-md border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground" role="status" aria-live="polite">
+          <span className="flex items-center gap-2 font-medium text-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            Fetching the ITHANET name list…
+          </span>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-primary" />
+          </div>
+          <p>The first fetch can take about 15 seconds. Later searches use the saved copy.</p>
+        </div>
+      )}
       {cacheSource && index.data && q.trim().length >= 2 && !index.isLoading && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
           <CheckCircle2 className="h-3.5 w-3.5 text-primary" />

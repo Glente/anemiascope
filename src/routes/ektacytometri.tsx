@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Download, Eraser, Eye, EyeOff, Lock, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { loadReferences, MIN_REFS, referenceBand, referenceParams, saveReferences, type ParamKey } from "@/lib/osmo-reference";
 import { keyParams, parseOsmoscan, type CsvFormat, type OsmoscanFile } from "@/lib/osmoscan";
 
 export const Route = createFileRoute("/ektacytometri")({
@@ -44,6 +45,31 @@ function EktaPage() {
   const [dragging, setDragging] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const refInputRef = useRef<HTMLInputElement>(null);
+  const [refs, setRefs] = useState<OsmoscanFile[]>([]);
+  const [showBand, setShowBand] = useState(true);
+  useEffect(() => { setRefs(loadReferences()); }, []);
+  const band = useMemo(() => referenceBand(refs), [refs]);
+  const refStats = useMemo(() => referenceParams(refs), [refs]);
+
+  const setAndSaveRefs = (next: OsmoscanFile[]) => {
+    setRefs(next);
+    if (!saveReferences(next)) toast.error("Could not save reference controls in this browser.");
+  };
+  const addRefs = async (list: FileList | null) => {
+    if (!list) return;
+    const added: OsmoscanFile[] = [];
+    for (const f of Array.from(list)) {
+      const res = parseOsmoscan(await f.text(), f.name);
+      if (!res) { toast.error(`Could not read ${f.name} as an Osmoscan export.`); continue; }
+      added.push(res.file);
+    }
+    const names = new Set(refs.map((r) => r.fileName));
+    const next = [...refs, ...added.filter((a) => !names.has(a.fileName))];
+    setAndSaveRefs(next);
+    if (refInputRef.current) refInputRef.current.value = "";
+    if (added.length) toast.success(`${added.length} reference control(s) saved in this browser.`);
+  };
 
   const hasData = slots.length > 0;
   const refSlot = slots.find((s) => s.id === refId) ?? slots[0];
@@ -200,7 +226,46 @@ function EktaPage() {
             </CardContent>
           </Card>
 
-          <Card className="min-w-0">
+          <Card className="lg:col-start-1">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Reference controls ({refs.length})</CardTitle>
+              <CardDescription>Healthy controls forming the normal range (mean ± 2 SD). Saved in this browser only.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button variant="outline" className="w-full" onClick={() => refInputRef.current?.click()}>
+                <Upload className="mr-1.5 h-4 w-4" /> Add reference CSV files
+              </Button>
+              <input ref={refInputRef} type="file" multiple accept=".csv,text/csv,text/plain" className="hidden"
+                aria-label="Choose reference control CSV files" onChange={(e) => addRefs(e.target.files)} />
+              {refs.length > 0 && refs.length < MIN_REFS && (
+                <p className="text-xs text-destructive">Add at least {MIN_REFS} controls to form a normal range (5–10 recommended).</p>
+              )}
+              {refs.length > 0 && (
+                <ul className="max-h-48 space-y-1 overflow-auto text-xs">
+                  {refs.map((r) => (
+                    <li key={r.fileName} className="flex items-center gap-2">
+                      <span className="min-w-0 flex-1 truncate" title={r.fileName}>{r.sampleName} · {r.date.replace(/^on\s*/, "")}</span>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" title="Remove"
+                        onClick={() => setAndSaveRefs(refs.filter((x) => x.fileName !== r.fileName))}><X className="h-3.5 w-3.5" /></Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {band.length > 0 && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={showBand} onChange={(e) => setShowBand(e.target.checked)} /> Show normal range on plot
+                </label>
+              )}
+              {refs.length > 0 && (
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground"
+                  onClick={() => { if (confirm("Delete all saved reference controls from this browser?")) setAndSaveRefs([]); }}>
+                  <Eraser className="mr-1.5 h-4 w-4" /> Delete saved references
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 self-start">
             <CardHeader className="flex flex-row flex-wrap items-center gap-2 pb-3">
               {(["plot", "compare", "info", "values"] as const).map((t) => (
                 <Button key={t} size="sm" variant={tab === t ? "default" : "ghost"} onClick={() => setTab(t)}>
@@ -220,16 +285,16 @@ function EktaPage() {
               )}
             </CardHeader>
             <CardContent>
-              {!hasData ? (
+              {!hasData && !(tab === "plot" && band.length) ? (
                 <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
                   <Upload className="h-6 w-6" /> Choose one or more CSV files to draw the curves.
                 </div>
               ) : tab === "plot" ? (
                 <div className="overflow-x-auto">
-                  <Chart ref={svgRef} slots={slots.filter((s) => s.visible)} refSlot={refSlot} lines={lines} annotations={annotations} />
+                  <Chart ref={svgRef} band={showBand ? band : []} slots={slots.filter((s) => s.visible)} refSlot={refSlot} lines={lines} annotations={annotations} />
                 </div>
               ) : tab === "compare" ? (
-                <CompareTable slots={slots} refSlot={refSlot} />
+                <CompareTable slots={slots} refSlot={refSlot} refStats={refStats} nRefs={refs.length} />
               ) : tab === "info" ? (
                 <InfoTables slots={slots} />
               ) : (
@@ -250,7 +315,11 @@ function EktaPage() {
   );
 }
 
-function CompareTable({ slots, refSlot }: { slots: Slot[]; refSlot?: Slot | undefined }) {
+function CompareTable({ slots, refSlot, refStats, nRefs }: {
+  slots: Slot[]; refSlot?: Slot | undefined; refStats: ReturnType<typeof referenceParams>; nRefs: number;
+}) {
+  const hasRef = Object.keys(refStats).length > 0;
+  const fmt = (x: number, key: ParamKey) => (key.startsWith("ei") ? x.toFixed(3) : x.toFixed(0));
   const cols = [["eiMin", "EImin"], ["oMin", "Omin"], ["eiMax", "EImax"], ["oMax", "Omax"], ["eiHyper", "EIhyper"], ["oHyper", "Ohyper"], ["area", "Area"]] as const;
   const ref = refSlot ? keyParams(refSlot.file) : null;
   return (
@@ -261,27 +330,42 @@ function CompareTable({ slots, refSlot }: { slots: Slot[]; refSlot?: Slot | unde
             <th className="px-2 py-1 text-left font-medium">Curve</th>
             {cols.map(([, l]) => <th key={l} className="px-2 py-1 text-right font-medium">{l}</th>)}
           </tr></thead>
-          <tbody>{slots.map((s) => {
+          <tbody>
+          {hasRef && (
+            <tr className="border-b bg-muted/40 text-xs">
+              <td className="px-2 py-1.5">Normal range (n={nRefs})</td>
+              {cols.map(([key]) => { const st = refStats[key]; return (
+                <td key={key} className="px-2 py-1.5 text-right">{st ? `${fmt(st.lo, key)}–${fmt(st.hi, key)}` : "—"}</td>
+              ); })}
+            </tr>
+          )}
+          {slots.map((s) => {
             const k = keyParams(s.file);
             return (
               <tr key={s.id} className="border-b last:border-0">
                 <td className="px-2 py-1.5"><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />{s.legend}</td>
                 {cols.map(([key]) => {
                   const v = k[key]; const r = ref?.[key];
+                  const st = refStats[key];
+                  const out = v != null && st ? (v > st.hi ? "hi" : v < st.lo ? "lo" : null) : null;
                   const diff = s !== refSlot && v != null && r != null && r !== 0 ? ((v - r) / r) * 100 : null;
                   return (
-                    <td key={key} className="px-2 py-1.5 text-right">
-                      {v ?? "—"}
+                    <td key={key} className={`px-2 py-1.5 text-right ${out ? "font-semibold text-destructive" : ""}`}
+                      title={out ? "Outside normal range" : undefined}>
+                      {v ?? "—"}{out === "hi" ? " ↑" : out === "lo" ? " ↓" : ""}
                       {diff != null && <span className="ml-1 text-xs text-muted-foreground">({diff > 0 ? "+" : ""}{diff.toFixed(0)}%)</span>}
                     </td>
                   );
                 })}
               </tr>
             );
-          })}</tbody>
+          })}
+          </tbody>
         </table>
       </div>
       {slots.length > 1 && <p className="text-xs text-muted-foreground">Percentages are relative to {refSlot?.legend}.</p>}
+      {hasRef ? <p className="text-xs text-muted-foreground">Normal range = mean ± 2 SD of the saved reference controls; values outside are marked ↑/↓ in red.</p>
+        : <p className="text-xs text-muted-foreground">Add at least {MIN_REFS} reference controls to see a normal range.</p>}
     </div>
   );
 }
@@ -299,8 +383,8 @@ const X0 = 100, X1 = 550, Y0 = 0, Y1 = 0.65;
 const sx = (o: number) => M.l + ((o - X0) / (X1 - X0)) * (W - M.l - M.r);
 const sy = (e: number) => H - M.b - ((e - Y0) / (Y1 - Y0)) * (H - M.t - M.b);
 
-function Chart({ slots, refSlot, lines, annotations, ref }: {
-  slots: Slot[]; refSlot?: Slot | undefined; lines: boolean; annotations: boolean; ref: React.Ref<SVGSVGElement>;
+function Chart({ band, slots, refSlot, lines, annotations, ref }: {
+  band: { o: number; lo: number; hi: number; mean: number }[]; slots: Slot[]; refSlot?: Slot | undefined; lines: boolean; annotations: boolean; ref: React.Ref<SVGSVGElement>;
 }) {
   const axis = "#374151", grid = "#e5e7eb";
   const main = refSlot && slots.includes(refSlot) ? refSlot.file : undefined;
@@ -337,6 +421,12 @@ function Chart({ slots, refSlot, lines, annotations, ref }: {
 
       <clipPath id="plot-area"><rect x={sx(X0)} y={sy(Y1)} width={sx(X1) - sx(X0)} height={sy(Y0) - sy(Y1)} /></clipPath>
       <g clipPath="url(#plot-area)">
+        {band.length > 1 && (<>
+          <polygon fill="#9ca3af" fillOpacity="0.3" stroke="none"
+            points={[...band.map((b) => `${sx(b.o)},${sy(b.hi)}`), ...[...band].reverse().map((b) => `${sx(b.o)},${sy(b.lo)}`)].join(" ")} />
+          <polyline fill="none" stroke="#6b7280" strokeDasharray="4 3" strokeWidth="1"
+            points={band.map((b) => `${sx(b.o)},${sy(b.mean)}`).join(" ")} />
+        </>)}
         {slots.map((s) => (
           <polyline key={s.id} fill="none" stroke={s.color} strokeWidth="2"
             points={s.file.points.map((p) => `${sx(p.o)},${sy(p.ei)}`).join(" ")} />
@@ -367,6 +457,12 @@ function Chart({ slots, refSlot, lines, annotations, ref }: {
           <text x="28" y="4" fontSize="12" fill={axis}>{s.legend || `File ${i + 1}`}</text>
         </g>
       ))}
+      {band.length > 1 && (
+        <g transform={`translate(${W - M.r + 16} ${M.t + 10 + slots.length * 22})`}>
+          <rect x="0" y="-6" width="22" height="12" fill="#9ca3af" fillOpacity="0.3" />
+          <text x="28" y="4" fontSize="12" fill={axis}>Normal ± 2 SD</text>
+        </g>
+      )}
     </svg>
   );
 }

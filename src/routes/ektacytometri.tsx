@@ -300,7 +300,7 @@ const sx = (o: number) => M.l + ((o - X0) / (X1 - X0)) * (W - M.l - M.r);
 const sy = (e: number) => H - M.b - ((e - Y0) / (Y1 - Y0)) * (H - M.t - M.b);
 
 function Chart({ slots, refSlot, lines, annotations, ref }: {
-  slots: Slot[]; refSlot?: Slot; lines: boolean; annotations: boolean; ref: React.Ref<SVGSVGElement>;
+  slots: Slot[]; refSlot?: Slot | undefined; lines: boolean; annotations: boolean; ref: React.Ref<SVGSVGElement>;
 }) {
   const axis = "#374151", grid = "#e5e7eb";
   const main = refSlot && slots.includes(refSlot) ? refSlot.file : undefined;

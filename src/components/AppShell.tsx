@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Dna, FlaskConical, Presentation, ShieldCheck } from "lucide-react";
+import { Activity, Dna, FlaskConical, Presentation, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 
 const NAV = [
   { to: "/", label: "Variant workspace", icon: Dna },
   { to: "/patient", label: "Case & labs", icon: FlaskConical },
+  { to: "/ektacytometri", label: "Ektacytometry", icon: Activity },
   { to: "/export", label: "Board slides", icon: Presentation },
 ] as const;
 

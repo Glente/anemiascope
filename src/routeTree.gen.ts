@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EktacytometriRouteImport } from './routes/ektacytometri'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as PatientRouteImport } from './routes/patient'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EktacytometriRoute = EktacytometriRouteImport.update({
+  id: '/ektacytometri',
+  path: '/ektacytometri',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExportRoute = ExportRouteImport.update({
@@ -31,30 +37,34 @@ const PatientRoute = PatientRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ektacytometri': typeof EktacytometriRoute
   '/export': typeof ExportRoute
   '/patient': typeof PatientRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ektacytometri': typeof EktacytometriRoute
   '/export': typeof ExportRoute
   '/patient': typeof PatientRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ektacytometri': typeof EktacytometriRoute
   '/export': typeof ExportRoute
   '/patient': typeof PatientRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/export' | '/patient'
+  fullPaths: '/' | '/ektacytometri' | '/export' | '/patient'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/export' | '/patient'
-  id: '__root__' | '/' | '/export' | '/patient'
+  to: '/' | '/ektacytometri' | '/export' | '/patient'
+  id: '__root__' | '/' | '/ektacytometri' | '/export' | '/patient'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EktacytometriRoute: typeof EktacytometriRoute
   ExportRoute: typeof ExportRoute
   PatientRoute: typeof PatientRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ektacytometri': {
+      id: '/ektacytometri'
+      path: '/ektacytometri'
+      fullPath: '/ektacytometri'
+      preLoaderRoute: typeof EktacytometriRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/export': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EktacytometriRoute: EktacytometriRoute,
   ExportRoute: ExportRoute,
   PatientRoute: PatientRoute,
 }

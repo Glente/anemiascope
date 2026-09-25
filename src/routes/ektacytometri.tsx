@@ -43,6 +43,7 @@ function EktaPage() {
   const [refId, setRefId] = useState<number | null>(null);
   const [tab, setTab] = useState<"plot" | "compare" | "info" | "values">("plot");
   const [dragging, setDragging] = useState(false);
+  const [refDragging, setRefDragging] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const refInputRef = useRef<HTMLInputElement>(null);
@@ -232,9 +233,17 @@ function EktaPage() {
               <CardDescription>Healthy controls forming the normal range (mean ± 2 SD). Saved in this browser only.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full" onClick={() => refInputRef.current?.click()}>
-                <Upload className="mr-1.5 h-4 w-4" /> Add reference CSV files
-              </Button>
+              <button
+                type="button"
+                onClick={() => refInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setRefDragging(true); }}
+                onDragLeave={() => setRefDragging(false)}
+                onDrop={(e) => { e.preventDefault(); setRefDragging(false); addRefs(e.dataTransfer.files); }}
+                className={`flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed px-3 py-4 text-sm transition-colors ${refDragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
+              >
+                <Upload className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Drop CSV files or click to choose</span>
+              </button>
               <input ref={refInputRef} type="file" multiple accept=".csv,text/csv,text/plain" className="hidden"
                 aria-label="Choose reference control CSV files" onChange={(e) => addRefs(e.target.files)} />
               {refs.length > 0 && refs.length < MIN_REFS && (

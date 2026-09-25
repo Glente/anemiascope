@@ -250,7 +250,7 @@ function EktaPage() {
   );
 }
 
-function CompareTable({ slots, refSlot }: { slots: Slot[]; refSlot?: Slot }) {
+function CompareTable({ slots, refSlot }: { slots: Slot[]; refSlot?: Slot | undefined }) {
   const cols = [["eiMin", "EImin"], ["oMin", "Omin"], ["eiMax", "EImax"], ["oMax", "Omax"], ["eiHyper", "EIhyper"], ["oHyper", "Ohyper"], ["area", "Area"]] as const;
   const ref = refSlot ? keyParams(refSlot.file) : null;
   return (

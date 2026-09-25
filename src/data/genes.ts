@@ -1,4 +1,6 @@
-export type GeneCategory = "membrane" | "enzyme" | "hemoglobin";
+import { PANEL_GENES, PANEL_MEMBERSHIP } from "./panel-genes";
+
+export type GeneCategory = "membrane" | "enzyme" | "hemoglobin" | "other";
 
 export type VariantPreset = {
   label: string;
@@ -20,15 +22,19 @@ export type Gene = {
   summary: string;
   transcript?: string;
   presets: VariantPreset[];
+  panels?: string[];
+  /** Curated, frequently used gene shown in the default dropdown. */
+  common?: boolean;
 };
 
 export const CATEGORY_LABEL: Record<GeneCategory, string> = {
   membrane: "Red cell membrane",
   enzyme: "Red cell enzymes",
   hemoglobin: "Hemoglobin",
+  other: "Other panel genes",
 };
 
-export const GENES: Gene[] = [
+const CURATED: Gene[] = [
   {
     symbol: "ANK1",
     category: "membrane",
@@ -395,6 +401,11 @@ export const GENES: Gene[] = [
     transcript: "NM_000519.4",
     presets: [],
   },
+];
+
+export const GENES: Gene[] = [
+  ...CURATED.map((g) => ({ ...g, common: true, panels: PANEL_MEMBERSHIP[g.symbol] ?? [] })),
+  ...PANEL_GENES,
 ];
 
 export function getGene(symbol: string): Gene | undefined {

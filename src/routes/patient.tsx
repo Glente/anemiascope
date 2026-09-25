@@ -25,7 +25,7 @@ export const Route = createFileRoute("/patient")({
         content:
           "Enter pseudonymised clinical details and hematology labs for the board discussion. Nothing is stored on a server.",
       },
-      { property: "og:title", content: "Case & labs — Anemia Variant Board" },
+      { property: "og:title", content: "Case & labs — Anemiascope" },
       {
         property: "og:description",
         content: "Pseudonymised case details and hematology labs, held only in your browser tab.",

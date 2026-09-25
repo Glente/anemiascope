@@ -18,7 +18,7 @@ export const Route = createFileRoute("/ektacytometri")({
         name: "description",
         content: "Plot Osmoscan ektacytometry curves for patient and controls, locally in your browser.",
       },
-      { property: "og:title", content: "Ektacytometry curves — Anemia Variant Board" },
+      { property: "og:title", content: "Ektacytometry curves — Anemiascope" },
       {
         property: "og:description",
         content: "Osmotic gradient ektacytometry plots; files never leave the browser tab.",

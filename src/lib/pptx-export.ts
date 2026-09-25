@@ -38,7 +38,7 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar, prov
   const s1 = pptx.addSlide();
   s1.background = { color: INK };
   s1.addShape("rect", { x: 0, y: 0, w: 0.28, h: 5.63, fill: { color: OXBLOOD } });
-  s1.addText("Anemia variant board", {
+  s1.addText("Anemiascope", {
     x: 0.9, y: 1.5, w: 8.4, h: 0.5, fontFace: H.body, fontSize: 20, color: "C9A227", charSpacing: 2,
   });
   const headline = `${gene.symbol} ${state.variantInput || ""}`.trim();

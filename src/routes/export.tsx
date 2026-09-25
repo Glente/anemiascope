@@ -31,7 +31,7 @@ export const Route = createFileRoute("/export")({
         content:
           "Build a PowerPoint deck for the anemia multidisciplinary board: case, labs, variant impact, AlphaFold view and database evidence.",
       },
-      { property: "og:title", content: "Board slides — Anemia Variant Board" },
+      { property: "og:title", content: "Board slides — Anemiascope" },
       {
         property: "og:description",
         content: "One-click .pptx export for anemia multidisciplinary board presentations.",

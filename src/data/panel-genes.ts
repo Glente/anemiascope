@@ -1,0 +1,973 @@
+import type { Gene } from "./genes";
+
+/** Hæmatologiske in silico genpaneler v9 (22-okt-2025). Panel membership per gene. */
+export const PANEL_MEMBERSHIP: Record<string, string[]> = {"ADD1": ["Membranopathy"], "ADD2": ["Membranopathy"], "AK1": ["Membranopathy"], "ANO6": ["Membranopathy"], "ANK1": ["Membranopathy"], "APOB": ["Membranopathy"], "DMTN": ["Membranopathy"], "EPB41": ["Membranopathy"], "EPB42": ["Membranopathy"], "KCNN4": ["Membranopathy"], "MTTP": ["Membranopathy"], "PIEZO1": ["Membranopathy", "Congenital Erythrocytosis", "Lymphedema"], "RHAG": ["Membranopathy"], "SLC2A1": ["Membranopathy"], "SLC4A1": ["Membranopathy"], "SPTA1": ["Membranopathy"], "SPTB": ["Membranopathy"], "STOM": ["Membranopathy"], "TMOD1": ["Membranopathy"], "TPM3": ["Membranopathy"], "XK": ["Membranopathy"], "ALDOA": ["Red Cell Enzyme"], "BPGM": ["Red Cell Enzyme", "Congenital Erythrocytosis"], "CYB5A": ["Red Cell Enzyme"], "CYB5R1": ["Red Cell Enzyme"], "CYB5R2": ["Red Cell Enzyme"], "CYB5R3": ["Red Cell Enzyme"], "CYB5R4": ["Red Cell Enzyme"], "CYB5RL": ["Red Cell Enzyme"], "ENO1": ["Red Cell Enzyme"], "G6PD": ["Red Cell Enzyme"], "GAPDH": ["Red Cell Enzyme"], "GCLC": ["Red Cell Enzyme"], "GPI": ["Red Cell Enzyme"], "GPX1": ["Red Cell Enzyme"], "GSR": ["Red Cell Enzyme"], "GSS": ["Red Cell Enzyme"], "HK1": ["Red Cell Enzyme"], "HK2": ["Red Cell Enzyme"], "NT5C3A": ["Red Cell Enzyme", "Bone Marrow Failure"], "PFKM": ["Red Cell Enzyme"], "PGAM1": ["Red Cell Enzyme"], "PGD": ["Red Cell Enzyme"], "PGK1": ["Red Cell Enzyme"], "PGM1": ["Red Cell Enzyme"], "PKLR": ["Red Cell Enzyme"], "TPI1": ["Red Cell Enzyme"], "AHSP": ["Hemoglobinopathies"], "ATRX": ["Hemoglobinopathies"], "HBA1": ["Hemoglobinopathies", "Congenital Erythrocytosis"], "HBA2": ["Hemoglobinopathies", "Congenital Erythrocytosis"], "HBB": ["Hemoglobinopathies", "Congenital Erythrocytosis"], "HBD": ["Hemoglobinopathies"], "HBE1": ["Hemoglobinopathies"], "HBG1": ["Hemoglobinopathies"], "HBG2": ["Hemoglobinopathies"], "HBM": ["Hemoglobinopathies"], "HBQ1": ["Hemoglobinopathies"], "HBZ": ["Hemoglobinopathies"], "SUPT5H": ["Hemoglobinopathies"], "CDAN1": ["Congenital Dyserythropeoietic Anaemia"], "CDIN1": ["Congenital Dyserythropeoietic Anaemia"], "COX4I2": ["Congenital Dyserythropeoietic Anaemia"], "GATA1": ["Congenital Dyserythropeoietic Anaemia", "Porphyria"], "GATA2": ["Congenital Dyserythropeoietic Anaemia", "Lymphedema"], "KIF23": ["Congenital Dyserythropeoietic Anaemia"], "KLF1": ["Congenital Dyserythropeoietic Anaemia"], "LPIN2": ["Congenital Dyserythropeoietic Anaemia"], "SEC23B": ["Congenital Dyserythropeoietic Anaemia"], "TAL1": ["Congenital Dyserythropeoietic Anaemia"], "RACGAP1": ["Congenital Dyserythropeoietic Anaemia"], "AMN": ["Megaloblastic Anaemia"], "CUBN": ["Megaloblastic Anaemia"], "DHFR": ["Megaloblastic Anaemia"], "FTCD": ["Megaloblastic Anaemia"], "CBLIF": ["Megaloblastic Anaemia"], "MT-CO1": ["Megaloblastic Anaemia"], "MTR": ["Megaloblastic Anaemia"], "MTRR": ["Megaloblastic Anaemia"], "SLC19A2": ["Megaloblastic Anaemia", "Sideroblastic Anaemia"], "UMPS": ["Megaloblastic Anaemia"], "TCN2": ["Megaloblastic Anaemia"], "BHLHE41": ["Congenital Erythrocytosis"], "EGLN1": ["Congenital Erythrocytosis"], "EGLN2": ["Congenital Erythrocytosis"], "EGLN3": ["Congenital Erythrocytosis"], "EPAS1": ["Congenital Erythrocytosis"], "EPO": ["Congenital Erythrocytosis"], "EPOR": ["Congenital Erythrocytosis"], "GFI1B": ["Congenital Erythrocytosis"], "HIF1A": ["Congenital Erythrocytosis"], "HIF1AN": ["Congenital Erythrocytosis"], "HIF3A": ["Congenital Erythrocytosis"], "JAK2": ["Congenital Erythrocytosis"], "KDM6A": ["Congenital Erythrocytosis"], "OS9": ["Congenital Erythrocytosis"], "SH2B3": ["Congenital Erythrocytosis"], "VHL": ["Congenital Erythrocytosis"], "ZNF197": ["Congenital Erythrocytosis"], "RPL5": ["Diamond Blackfan Anaemia"], "RPL9": ["Diamond Blackfan Anaemia"], "RPS10": ["Diamond Blackfan Anaemia"], "RPL11": ["Diamond Blackfan Anaemia"], "RPL15": ["Diamond Blackfan Anaemia"], "RPL19": ["Diamond Blackfan Anaemia"], "RPL26": ["Diamond Blackfan Anaemia"], "RPL27": ["Diamond Blackfan Anaemia"], "RPL35A": ["Diamond Blackfan Anaemia"], "RPS7": ["Diamond Blackfan Anaemia"], "RPS19": ["Diamond Blackfan Anaemia"], "RPS24": ["Diamond Blackfan Anaemia"], "RPS26": ["Diamond Blackfan Anaemia"], "RPS29": ["Diamond Blackfan Anaemia"], "ADA2": ["Diamond Blackfan Anaemia", "Neutropenia"], "RPL31": ["Diamond Blackfan Anaemia"], "TSR2": ["Diamond Blackfan Anaemia"], "RPS27": ["Diamond Blackfan Anaemia"], "RPL35": ["Diamond Blackfan Anaemia"], "RPS17": ["Diamond Blackfan Anaemia"], "RPS15A": ["Diamond Blackfan Anaemia"], "HEATR3": ["Diamond Blackfan Anaemia"], "RPS28": ["Diamond Blackfan Anaemia"], "RPL18": ["Diamond Blackfan Anaemia"], "ACD": ["Bone Marrow Failure"], "CTC1": ["Bone Marrow Failure"], "DKC1": ["Bone Marrow Failure"], "HOXA11": ["Bone Marrow Failure"], "LIG4": ["Bone Marrow Failure"], "MASTL": ["Bone Marrow Failure"], "MPL": ["Bone Marrow Failure"], "NHP2": ["Bone Marrow Failure"], "NOP10": ["Bone Marrow Failure"], "PALB2": ["Bone Marrow Failure"], "PARN": ["Bone Marrow Failure"], "RAD51C": ["Bone Marrow Failure"], "RMRP": ["Bone Marrow Failure"], "RTEL1": ["Bone Marrow Failure"], "SBDS": ["Bone Marrow Failure"], "SMARCAL1": ["Bone Marrow Failure", "Neutropenia"], "SRP72": ["Bone Marrow Failure"], "TERC": ["Bone Marrow Failure"], "TERT": ["Bone Marrow Failure"], "TINF2": ["Bone Marrow Failure"], "WRAP53": ["Bone Marrow Failure"], "XRCC2": ["Bone Marrow Failure"], "ALAD": ["Porphyria"], "ALAS2": ["Porphyria", "Sideroblastic Anaemia"], "CPOX": ["Porphyria"], "FECH": ["Porphyria"], "HMBS": ["Porphyria"], "PPOX": ["Porphyria"], "UROD": ["Porphyria"], "UROS": ["Porphyria"], "ACKR1": ["Neutropenia"], "CXCR4": ["Neutropenia"], "ELANE": ["Neutropenia"], "G6PC3": ["Neutropenia"], "GFI1": ["Neutropenia"], "HAX1": ["Neutropenia"], "SLC37A4": ["Neutropenia"], "TAFAZZIN": ["Neutropenia"], "USB1": ["Neutropenia"], "WAS": ["Neutropenia"], "ABCB6": ["Sideroblastic Anaemia"], "ABCB7": ["Sideroblastic Anaemia"], "ALAS1": ["Sideroblastic Anaemia"], "GLRX5": ["Sideroblastic Anaemia"], "PUS1": ["Sideroblastic Anaemia"], "SF3B1": ["Sideroblastic Anaemia"], "SLC25A38": ["Sideroblastic Anaemia"], "YARS2": ["Sideroblastic Anaemia"], "HSPA9": ["Sideroblastic Anaemia"], "TRNT1": ["Sideroblastic Anaemia"], "LARS2": ["Sideroblastic Anaemia"], "NDUFB11": ["Sideroblastic Anaemia"], "BMP4": ["Iron Regulation"], "BMP6": ["Iron Regulation"], "CP": ["Iron Regulation"], "DENND3": ["Iron Regulation"], "FGL1": ["Iron Regulation"], "FTH1": ["Iron Regulation"], "FTL": ["Iron Regulation"], "HAMP": ["Iron Regulation"], "HFE": ["Iron Regulation"], "HFE2": ["Iron Regulation"], "SLC11A2": ["Iron Regulation"], "SLC40A1": ["Iron Regulation"], "SMAD4": ["Iron Regulation"], "SMAD6": ["Iron Regulation"], "SMAD7": ["Iron Regulation"], "SUGP2": ["Iron Regulation"], "TF": ["Iron Regulation"], "TFR2": ["Iron Regulation"], "TFRC": ["Iron Regulation"], "TMPRSS6": ["Iron Regulation"], "PIGA": ["Iron Regulation"], "NEO1": ["Iron Regulation"], "PRF1": ["Hemophagocytic Lymphohistiocystosis"], "STX11": ["Hemophagocytic Lymphohistiocystosis"], "STXBP2": ["Hemophagocytic Lymphohistiocystosis"], "UNC13D": ["Hemophagocytic Lymphohistiocystosis"], "CCBE1": ["Lymphedema"], "FAT4": ["Lymphedema"], "HP": ["Uden for panelerne (single genes)"], "SERPINA1": ["Uden for panelerne (single genes)"], "UGT1A1": ["Uden for panelerne (single genes)"], "CD59": ["Uden for panelerne (single genes)"], "STEAP3": ["Uden for panelerne (single genes)"], "ABCG5": ["Uden for panelerne (single genes)"], "ABCG8": ["Uden for panelerne (single genes)"], "ATP11C": ["Uden for panelerne (single genes)"], "NMNAT3": ["Uden for panelerne (single genes)"]};
+
+const EXTRA: { symbol: string; uniprot: string; protein: string }[] = [
+{
+"symbol": "ADD1",
+"uniprot": "P35611",
+"protein": "Alpha-adducin"
+},
+{
+"symbol": "ADD2",
+"uniprot": "P35612",
+"protein": "Beta-adducin"
+},
+{
+"symbol": "AK1",
+"uniprot": "P00568",
+"protein": "Adenylate kinase isoenzyme 1"
+},
+{
+"symbol": "ANO6",
+"uniprot": "Q4KMQ2",
+"protein": "Anoctamin-6"
+},
+{
+"symbol": "APOB",
+"uniprot": "P04114",
+"protein": "Apolipoprotein B-100"
+},
+{
+"symbol": "DMTN",
+"uniprot": "Q08495",
+"protein": "Dematin"
+},
+{
+"symbol": "EPB41",
+"uniprot": "P11171",
+"protein": "Protein 4.1"
+},
+{
+"symbol": "KCNN4",
+"uniprot": "O15554",
+"protein": "Intermediate conductance calcium-activated potassium channel protein 4"
+},
+{
+"symbol": "MTTP",
+"uniprot": "P55157",
+"protein": "Microsomal triglyceride transfer protein large subunit"
+},
+{
+"symbol": "SLC2A1",
+"uniprot": "P11166",
+"protein": "Solute carrier family 2, facilitated glucose transporter member 1"
+},
+{
+"symbol": "STOM",
+"uniprot": "P27105",
+"protein": "Stomatin"
+},
+{
+"symbol": "TMOD1",
+"uniprot": "P28289",
+"protein": "Tropomodulin-1"
+},
+{
+"symbol": "TPM3",
+"uniprot": "P06753",
+"protein": "Tropomyosin alpha-3 chain"
+},
+{
+"symbol": "XK",
+"uniprot": "P51811",
+"protein": "Endoplasmic reticulum membrane adapter protein XK"
+},
+{
+"symbol": "BPGM",
+"uniprot": "P07738",
+"protein": "Bisphosphoglycerate mutase"
+},
+{
+"symbol": "CYB5A",
+"uniprot": "P00167",
+"protein": "Cytochrome b5"
+},
+{
+"symbol": "CYB5R1",
+"uniprot": "Q9UHQ9",
+"protein": "NADH-cytochrome b5 reductase 1"
+},
+{
+"symbol": "CYB5R2",
+"uniprot": "Q6BCY4",
+"protein": "NADH-cytochrome b5 reductase 2"
+},
+{
+"symbol": "CYB5R3",
+"uniprot": "P00387",
+"protein": "NADH-cytochrome b5 reductase 3"
+},
+{
+"symbol": "CYB5R4",
+"uniprot": "Q7L1T6",
+"protein": "Cytochrome b5 reductase 4"
+},
+{
+"symbol": "CYB5RL",
+"uniprot": "Q6IPT4",
+"protein": "NADH-cytochrome b5 reductase-like"
+},
+{
+"symbol": "ENO1",
+"uniprot": "P06733",
+"protein": "Alpha-enolase"
+},
+{
+"symbol": "GAPDH",
+"uniprot": "P04406",
+"protein": "Glyceraldehyde-3-phosphate dehydrogenase"
+},
+{
+"symbol": "GCLC",
+"uniprot": "P48506",
+"protein": "Glutamate--cysteine ligase catalytic subunit"
+},
+{
+"symbol": "GPX1",
+"uniprot": "P07203",
+"protein": "Glutathione peroxidase 1"
+},
+{
+"symbol": "GSR",
+"uniprot": "P00390",
+"protein": "Glutathione reductase, mitochondrial"
+},
+{
+"symbol": "GSS",
+"uniprot": "P48637",
+"protein": "Glutathione synthetase"
+},
+{
+"symbol": "HK2",
+"uniprot": "P52789",
+"protein": "Hexokinase-2"
+},
+{
+"symbol": "PFKM",
+"uniprot": "P08237",
+"protein": "ATP-dependent 6-phosphofructokinase, muscle type"
+},
+{
+"symbol": "PGAM1",
+"uniprot": "P18669",
+"protein": "Phosphoglycerate mutase 1"
+},
+{
+"symbol": "PGD",
+"uniprot": "P52209",
+"protein": "6-phosphogluconate dehydrogenase, decarboxylating"
+},
+{
+"symbol": "PGM1",
+"uniprot": "P36871",
+"protein": "Phosphoglucomutase-1"
+},
+{
+"symbol": "AHSP",
+"uniprot": "Q9NZD4",
+"protein": "Alpha-hemoglobin-stabilizing protein"
+},
+{
+"symbol": "ATRX",
+"uniprot": "P46100",
+"protein": "Chromatin remodeler ATRX"
+},
+{
+"symbol": "HBE1",
+"uniprot": "P02100",
+"protein": "Hemoglobin subunit epsilon"
+},
+{
+"symbol": "HBG1",
+"uniprot": "P69891",
+"protein": "Hemoglobin subunit gamma-1"
+},
+{
+"symbol": "HBG2",
+"uniprot": "P69892",
+"protein": "Hemoglobin subunit gamma-2"
+},
+{
+"symbol": "HBM",
+"uniprot": "Q6B0K9",
+"protein": "Hemoglobin subunit mu"
+},
+{
+"symbol": "HBQ1",
+"uniprot": "P09105",
+"protein": "Hemoglobin subunit theta-1"
+},
+{
+"symbol": "HBZ",
+"uniprot": "P02008",
+"protein": "Hemoglobin subunit zeta"
+},
+{
+"symbol": "SUPT5H",
+"uniprot": "O00267",
+"protein": "Transcription elongation factor SPT5"
+},
+{
+"symbol": "CDAN1",
+"uniprot": "Q8IWY9",
+"protein": "Codanin-1"
+},
+{
+"symbol": "CDIN1",
+"uniprot": "Q9Y2V0",
+"protein": "CDAN1-interacting nuclease 1"
+},
+{
+"symbol": "COX4I2",
+"uniprot": "Q96KJ9",
+"protein": "Cytochrome c oxidase subunit 4 isoform 2, mitochondrial"
+},
+{
+"symbol": "GATA1",
+"uniprot": "P15976",
+"protein": "Erythroid transcription factor"
+},
+{
+"symbol": "GATA2",
+"uniprot": "P23769",
+"protein": "Endothelial transcription factor GATA-2"
+},
+{
+"symbol": "KIF23",
+"uniprot": "Q02241",
+"protein": "Kinesin-like protein KIF23"
+},
+{
+"symbol": "KLF1",
+"uniprot": "Q13351",
+"protein": "Krueppel-like factor 1"
+},
+{
+"symbol": "LPIN2",
+"uniprot": "Q92539",
+"protein": "Phosphatidate phosphatase LPIN2"
+},
+{
+"symbol": "SEC23B",
+"uniprot": "Q15437",
+"protein": "Protein transport protein Sec23B"
+},
+{
+"symbol": "TAL1",
+"uniprot": "P17542",
+"protein": "T-cell acute lymphocytic leukemia protein 1"
+},
+{
+"symbol": "RACGAP1",
+"uniprot": "Q9H0H5",
+"protein": "Rac GTPase-activating protein 1"
+},
+{
+"symbol": "AMN",
+"uniprot": "Q9BXJ7",
+"protein": "Protein amnionless"
+},
+{
+"symbol": "CUBN",
+"uniprot": "O60494",
+"protein": "Cubilin"
+},
+{
+"symbol": "DHFR",
+"uniprot": "P00374",
+"protein": "Dihydrofolate reductase"
+},
+{
+"symbol": "FTCD",
+"uniprot": "O95954",
+"protein": "Formimidoyltransferase-cyclodeaminase"
+},
+{
+"symbol": "CBLIF",
+"uniprot": "P27352",
+"protein": "Cobalamin binding intrinsic factor"
+},
+{
+"symbol": "MT-CO1",
+"uniprot": "P00395",
+"protein": "Cytochrome c oxidase subunit 1"
+},
+{
+"symbol": "MTR",
+"uniprot": "Q99707",
+"protein": "Methionine synthase"
+},
+{
+"symbol": "MTRR",
+"uniprot": "Q9UBK8",
+"protein": "Methionine synthase reductase"
+},
+{
+"symbol": "SLC19A2",
+"uniprot": "O60779",
+"protein": "Thiamine transporter 1"
+},
+{
+"symbol": "UMPS",
+"uniprot": "P11172",
+"protein": "Uridine 5'-monophosphate synthase"
+},
+{
+"symbol": "TCN2",
+"uniprot": "P20062",
+"protein": "Transcobalamin-2"
+},
+{
+"symbol": "BHLHE41",
+"uniprot": "Q9C0J9",
+"protein": "Class E basic helix-loop-helix protein 41"
+},
+{
+"symbol": "EGLN1",
+"uniprot": "Q9GZT9",
+"protein": "Egl nine homolog 1"
+},
+{
+"symbol": "EGLN2",
+"uniprot": "Q96KS0",
+"protein": "Prolyl hydroxylase EGLN2"
+},
+{
+"symbol": "EGLN3",
+"uniprot": "Q9H6Z9",
+"protein": "Prolyl hydroxylase EGLN3"
+},
+{
+"symbol": "EPAS1",
+"uniprot": "Q99814",
+"protein": "Endothelial PAS domain-containing protein 1"
+},
+{
+"symbol": "EPO",
+"uniprot": "P01588",
+"protein": "Erythropoietin"
+},
+{
+"symbol": "EPOR",
+"uniprot": "P19235",
+"protein": "Erythropoietin receptor"
+},
+{
+"symbol": "GFI1B",
+"uniprot": "Q5VTD9",
+"protein": "Zinc finger protein Gfi-1b"
+},
+{
+"symbol": "HIF1A",
+"uniprot": "Q16665",
+"protein": "Hypoxia-inducible factor 1-alpha"
+},
+{
+"symbol": "HIF1AN",
+"uniprot": "Q9NWT6",
+"protein": "Hypoxia-inducible factor 1-alpha inhibitor"
+},
+{
+"symbol": "HIF3A",
+"uniprot": "Q9Y2N7",
+"protein": "Hypoxia-inducible factor 3-alpha"
+},
+{
+"symbol": "JAK2",
+"uniprot": "O60674",
+"protein": "Tyrosine-protein kinase JAK2"
+},
+{
+"symbol": "KDM6A",
+"uniprot": "O15550",
+"protein": "Lysine-specific demethylase 6A"
+},
+{
+"symbol": "OS9",
+"uniprot": "Q13438",
+"protein": "Protein OS-9"
+},
+{
+"symbol": "SH2B3",
+"uniprot": "Q9UQQ2",
+"protein": "SH2B adapter protein 3"
+},
+{
+"symbol": "VHL",
+"uniprot": "P40337",
+"protein": "von Hippel-Lindau disease tumor suppressor"
+},
+{
+"symbol": "ZNF197",
+"uniprot": "O14709",
+"protein": "Zinc finger protein 197"
+},
+{
+"symbol": "RPL5",
+"uniprot": "P46777",
+"protein": "Large ribosomal subunit protein uL18"
+},
+{
+"symbol": "RPL9",
+"uniprot": "P32969",
+"protein": "Large ribosomal subunit protein uL6"
+},
+{
+"symbol": "RPS10",
+"uniprot": "P46783",
+"protein": "Small ribosomal subunit protein eS10"
+},
+{
+"symbol": "RPL11",
+"uniprot": "P62913",
+"protein": "Large ribosomal subunit protein uL5"
+},
+{
+"symbol": "RPL15",
+"uniprot": "P61313",
+"protein": "Large ribosomal subunit protein eL15"
+},
+{
+"symbol": "RPL19",
+"uniprot": "P84098",
+"protein": "Large ribosomal subunit protein eL19"
+},
+{
+"symbol": "RPL26",
+"uniprot": "P61254",
+"protein": "Large ribosomal subunit protein uL24"
+},
+{
+"symbol": "RPL27",
+"uniprot": "P61353",
+"protein": "Large ribosomal subunit protein eL27"
+},
+{
+"symbol": "RPL35A",
+"uniprot": "P18077",
+"protein": "Large ribosomal subunit protein eL33"
+},
+{
+"symbol": "RPS7",
+"uniprot": "P62081",
+"protein": "Small ribosomal subunit protein eS7"
+},
+{
+"symbol": "RPS19",
+"uniprot": "P39019",
+"protein": "Small ribosomal subunit protein eS19"
+},
+{
+"symbol": "RPS24",
+"uniprot": "P62847",
+"protein": "Small ribosomal subunit protein eS24"
+},
+{
+"symbol": "RPS26",
+"uniprot": "P62854",
+"protein": "Small ribosomal subunit protein eS26"
+},
+{
+"symbol": "RPS29",
+"uniprot": "P62273",
+"protein": "Small ribosomal subunit protein uS14"
+},
+{
+"symbol": "ADA2",
+"uniprot": "Q9NZK5",
+"protein": "Adenosine deaminase 2"
+},
+{
+"symbol": "RPL31",
+"uniprot": "P62899",
+"protein": "Large ribosomal subunit protein eL31"
+},
+{
+"symbol": "TSR2",
+"uniprot": "Q969E8",
+"protein": "Pre-rRNA-processing protein TSR2 homolog"
+},
+{
+"symbol": "RPS27",
+"uniprot": "P42677",
+"protein": "Small ribosomal subunit protein eS27"
+},
+{
+"symbol": "RPL35",
+"uniprot": "P42766",
+"protein": "Large ribosomal subunit protein uL29"
+},
+{
+"symbol": "RPS17",
+"uniprot": "P08708",
+"protein": "Small ribosomal subunit protein eS17"
+},
+{
+"symbol": "RPS15A",
+"uniprot": "P62244",
+"protein": "Small ribosomal subunit protein uS8"
+},
+{
+"symbol": "HEATR3",
+"uniprot": "Q7Z4Q2",
+"protein": "HEAT repeat-containing protein 3"
+},
+{
+"symbol": "RPS28",
+"uniprot": "P62857",
+"protein": "Small ribosomal subunit protein eS28"
+},
+{
+"symbol": "RPL18",
+"uniprot": "Q07020",
+"protein": "Large ribosomal subunit protein eL18"
+},
+{
+"symbol": "ACD",
+"uniprot": "Q96AP0",
+"protein": "Adrenocortical dysplasia protein homolog"
+},
+{
+"symbol": "CTC1",
+"uniprot": "Q2NKJ3",
+"protein": "CST complex subunit CTC1"
+},
+{
+"symbol": "DKC1",
+"uniprot": "O60832",
+"protein": "H/ACA ribonucleoprotein complex subunit DKC1"
+},
+{
+"symbol": "HOXA11",
+"uniprot": "P31270",
+"protein": "Homeobox protein Hox-A11"
+},
+{
+"symbol": "LIG4",
+"uniprot": "P49917",
+"protein": "DNA ligase 4"
+},
+{
+"symbol": "MASTL",
+"uniprot": "Q96GX5",
+"protein": "Serine/threonine-protein kinase greatwall"
+},
+{
+"symbol": "MPL",
+"uniprot": "P40238",
+"protein": "Thrombopoietin receptor"
+},
+{
+"symbol": "NHP2",
+"uniprot": "Q9NX24",
+"protein": "H/ACA ribonucleoprotein complex subunit 2"
+},
+{
+"symbol": "NOP10",
+"uniprot": "Q9NPE3",
+"protein": "H/ACA ribonucleoprotein complex subunit 3"
+},
+{
+"symbol": "PALB2",
+"uniprot": "Q86YC2",
+"protein": "Partner and localizer of BRCA2"
+},
+{
+"symbol": "PARN",
+"uniprot": "O95453",
+"protein": "Poly(A)-specific ribonuclease PARN"
+},
+{
+"symbol": "RAD51C",
+"uniprot": "O43502",
+"protein": "DNA repair protein RAD51 homolog 3"
+},
+{
+"symbol": "RTEL1",
+"uniprot": "Q9NZ71",
+"protein": "Regulator of telomere elongation helicase 1"
+},
+{
+"symbol": "SBDS",
+"uniprot": "Q9Y3A5",
+"protein": "Ribosome maturation protein SBDS"
+},
+{
+"symbol": "SMARCAL1",
+"uniprot": "Q9NZC9",
+"protein": "SNF2 related chromatin remodeling annealing helicase 1"
+},
+{
+"symbol": "SRP72",
+"uniprot": "O76094",
+"protein": "Signal recognition particle subunit SRP72"
+},
+{
+"symbol": "TERT",
+"uniprot": "O14746",
+"protein": "Telomerase reverse transcriptase"
+},
+{
+"symbol": "TINF2",
+"uniprot": "Q9BSI4",
+"protein": "TERF1-interacting nuclear factor 2"
+},
+{
+"symbol": "WRAP53",
+"uniprot": "Q9BUR4",
+"protein": "Telomerase Cajal body protein 1"
+},
+{
+"symbol": "XRCC2",
+"uniprot": "O43543",
+"protein": "DNA repair protein XRCC2"
+},
+{
+"symbol": "ALAD",
+"uniprot": "P13716",
+"protein": "Delta-aminolevulinic acid dehydratase"
+},
+{
+"symbol": "ALAS2",
+"uniprot": "P22557",
+"protein": "5-aminolevulinate synthase, erythroid-specific, mitochondrial"
+},
+{
+"symbol": "CPOX",
+"uniprot": "P36551",
+"protein": "Oxygen-dependent coproporphyrinogen-III oxidase, mitochondrial"
+},
+{
+"symbol": "FECH",
+"uniprot": "P22830",
+"protein": "Ferrochelatase, mitochondrial"
+},
+{
+"symbol": "HMBS",
+"uniprot": "P08397",
+"protein": "Porphobilinogen deaminase"
+},
+{
+"symbol": "PPOX",
+"uniprot": "P50336",
+"protein": "Protoporphyrinogen oxidase"
+},
+{
+"symbol": "UROD",
+"uniprot": "P06132",
+"protein": "Uroporphyrinogen decarboxylase"
+},
+{
+"symbol": "UROS",
+"uniprot": "P10746",
+"protein": "Uroporphyrinogen-III synthase"
+},
+{
+"symbol": "ACKR1",
+"uniprot": "Q16570",
+"protein": "Atypical chemokine receptor 1"
+},
+{
+"symbol": "CXCR4",
+"uniprot": "P61073",
+"protein": "C-X-C chemokine receptor type 4"
+},
+{
+"symbol": "ELANE",
+"uniprot": "P08246",
+"protein": "Neutrophil elastase"
+},
+{
+"symbol": "G6PC3",
+"uniprot": "Q9BUM1",
+"protein": "Glucose-6-phosphatase 3"
+},
+{
+"symbol": "GFI1",
+"uniprot": "Q99684",
+"protein": "Zinc finger protein Gfi-1"
+},
+{
+"symbol": "HAX1",
+"uniprot": "O00165",
+"protein": "HCLS1-associated protein X-1"
+},
+{
+"symbol": "SLC37A4",
+"uniprot": "O43826",
+"protein": "Glucose-6-phosphate exchanger SLC37A4"
+},
+{
+"symbol": "TAFAZZIN",
+"uniprot": "Q16635",
+"protein": "Tafazzin"
+},
+{
+"symbol": "USB1",
+"uniprot": "Q9BQ65",
+"protein": "U6 snRNA phosphodiesterase 1"
+},
+{
+"symbol": "WAS",
+"uniprot": "A0A0C5B5G6",
+"protein": "Mitochondrial-derived peptide MOTS-c"
+},
+{
+"symbol": "ABCB6",
+"uniprot": "Q9NP58",
+"protein": "ATP-binding cassette sub-family B member 6"
+},
+{
+"symbol": "ABCB7",
+"uniprot": "O75027",
+"protein": "Iron-sulfur clusters transporter ABCB7, mitochondrial"
+},
+{
+"symbol": "ALAS1",
+"uniprot": "P13196",
+"protein": "5-aminolevulinate synthase, non-specific, mitochondrial"
+},
+{
+"symbol": "GLRX5",
+"uniprot": "Q86SX6",
+"protein": "Glutaredoxin-related protein 5, mitochondrial"
+},
+{
+"symbol": "PUS1",
+"uniprot": "Q9Y606",
+"protein": "Pseudouridylate synthase 1 homolog"
+},
+{
+"symbol": "SF3B1",
+"uniprot": "O75533",
+"protein": "Splicing factor 3B subunit 1"
+},
+{
+"symbol": "SLC25A38",
+"uniprot": "Q96DW6",
+"protein": "Mitochondrial glycine transporter"
+},
+{
+"symbol": "YARS2",
+"uniprot": "Q9Y2Z4",
+"protein": "Tyrosine--tRNA ligase, mitochondrial"
+},
+{
+"symbol": "HSPA9",
+"uniprot": "P38646",
+"protein": "Stress-70 protein, mitochondrial"
+},
+{
+"symbol": "TRNT1",
+"uniprot": "Q96Q11",
+"protein": "CCA tRNA nucleotidyltransferase 1, mitochondrial"
+},
+{
+"symbol": "LARS2",
+"uniprot": "Q15031",
+"protein": "Leucine--tRNA ligase, mitochondrial"
+},
+{
+"symbol": "NDUFB11",
+"uniprot": "Q9NX14",
+"protein": "NADH dehydrogenase [ubiquinone] 1 beta subcomplex subunit 11, mitochondrial"
+},
+{
+"symbol": "BMP4",
+"uniprot": "P12644",
+"protein": "Bone morphogenetic protein 4"
+},
+{
+"symbol": "BMP6",
+"uniprot": "P22004",
+"protein": "Bone morphogenetic protein 6"
+},
+{
+"symbol": "CP",
+"uniprot": "P00450",
+"protein": "Ceruloplasmin"
+},
+{
+"symbol": "DENND3",
+"uniprot": "A2RUS2",
+"protein": "DENN domain-containing protein 3"
+},
+{
+"symbol": "FGL1",
+"uniprot": "Q08830",
+"protein": "Fibrinogen-like protein 1"
+},
+{
+"symbol": "FTH1",
+"uniprot": "P02794",
+"protein": "Ferritin heavy chain"
+},
+{
+"symbol": "FTL",
+"uniprot": "P02792",
+"protein": "Ferritin light chain"
+},
+{
+"symbol": "HAMP",
+"uniprot": "P81172",
+"protein": "Hepcidin"
+},
+{
+"symbol": "HFE",
+"uniprot": "Q30201",
+"protein": "Hereditary hemochromatosis protein"
+},
+{
+"symbol": "HFE2",
+"uniprot": "Q6ZVN8",
+"protein": "Hemojuvelin"
+},
+{
+"symbol": "SLC11A2",
+"uniprot": "P49281",
+"protein": "Natural resistance-associated macrophage protein 2"
+},
+{
+"symbol": "SLC40A1",
+"uniprot": "Q9NP59",
+"protein": "Ferroportin"
+},
+{
+"symbol": "SMAD4",
+"uniprot": "Q13485",
+"protein": "SMAD family member 4"
+},
+{
+"symbol": "SMAD6",
+"uniprot": "O43541",
+"protein": "SMAD family member 6"
+},
+{
+"symbol": "SMAD7",
+"uniprot": "O15105",
+"protein": "SMAD family member 7"
+},
+{
+"symbol": "SUGP2",
+"uniprot": "Q8IX01",
+"protein": "SURP and G-patch domain-containing protein 2"
+},
+{
+"symbol": "TF",
+"uniprot": "P02787",
+"protein": "Serotransferrin"
+},
+{
+"symbol": "TFR2",
+"uniprot": "Q9UP52",
+"protein": "Transferrin receptor protein 2"
+},
+{
+"symbol": "TFRC",
+"uniprot": "P02786",
+"protein": "Transferrin receptor protein 1"
+},
+{
+"symbol": "TMPRSS6",
+"uniprot": "Q8IU80",
+"protein": "Transmembrane protease serine 6"
+},
+{
+"symbol": "PIGA",
+"uniprot": "P37287",
+"protein": "Phosphatidylinositol N-acetylglucosaminyltransferase subunit A"
+},
+{
+"symbol": "NEO1",
+"uniprot": "Q92859",
+"protein": "Neogenin"
+},
+{
+"symbol": "PRF1",
+"uniprot": "P14222",
+"protein": "Perforin-1"
+},
+{
+"symbol": "STX11",
+"uniprot": "O75558",
+"protein": "Syntaxin-11"
+},
+{
+"symbol": "STXBP2",
+"uniprot": "Q15833",
+"protein": "Syntaxin-binding protein 2"
+},
+{
+"symbol": "UNC13D",
+"uniprot": "Q70J99",
+"protein": "Protein unc-13 homolog D"
+},
+{
+"symbol": "CCBE1",
+"uniprot": "Q6UXH8",
+"protein": "Collagen and calcium-binding EGF domain-containing protein 1"
+},
+{
+"symbol": "FAT4",
+"uniprot": "Q6V0I7",
+"protein": "Protocadherin Fat 4"
+},
+{
+"symbol": "HP",
+"uniprot": "P00738",
+"protein": "Haptoglobin"
+},
+{
+"symbol": "SERPINA1",
+"uniprot": "P01009",
+"protein": "Alpha-1-antitrypsin"
+},
+{
+"symbol": "UGT1A1",
+"uniprot": "P22309",
+"protein": "UDP-glucuronosyltransferase 1A1"
+},
+{
+"symbol": "CD59",
+"uniprot": "P13987",
+"protein": "CD59 glycoprotein"
+},
+{
+"symbol": "STEAP3",
+"uniprot": "Q658P3",
+"protein": "Metalloreductase STEAP3"
+},
+{
+"symbol": "ABCG5",
+"uniprot": "Q9H222",
+"protein": "ATP-binding cassette sub-family G member 5"
+},
+{
+"symbol": "ABCG8",
+"uniprot": "Q9H221",
+"protein": "ATP-binding cassette sub-family G member 8"
+},
+{
+"symbol": "ATP11C",
+"uniprot": "Q8NB49",
+"protein": "Phospholipid-transporting ATPase IG"
+},
+{
+"symbol": "NMNAT3",
+"uniprot": "Q96T66",
+"protein": "Nicotinamide/nicotinic acid mononucleotide adenylyltransferase 3"
+}
+];
+
+export const PANEL_GENES: Gene[] = EXTRA.map((g) => ({
+  symbol: g.symbol,
+  category: "other",
+  protein: g.protein || g.symbol,
+  uniprot: g.uniprot,
+  inheritance: "See OMIM / ClinVar",
+  summary: `In-house panel: ${(PANEL_MEMBERSHIP[g.symbol] ?? []).join(", ")}. Protein data loaded live from UniProt.`,
+  presets: [],
+  panels: PANEL_MEMBERSHIP[g.symbol] ?? [],
+}));

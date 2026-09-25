@@ -26,21 +26,29 @@ export function GeneSearch({ value, onChange }: Props) {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return GENES;
-    return GENES.filter(
+    if (!q) return GENES.filter((g) => g.common);
+    const hits = GENES.filter(
       (g) =>
         g.symbol.toLowerCase().includes(q) ||
         g.protein.toLowerCase().includes(q) ||
-        CATEGORY_LABEL[g.category].toLowerCase().includes(q),
+        CATEGORY_LABEL[g.category].toLowerCase().includes(q) ||
+        (g.panels ?? []).some((p) => p.toLowerCase().includes(q)),
     );
+    const rank = (g: Gene) => {
+      const s = g.symbol.toLowerCase();
+      return s === q ? 0 : s.startsWith(q) ? 1 : s.includes(q) ? 2 : 3;
+    };
+    return hits.sort((a, b) => rank(a) - rank(b));
   }, [query]);
 
   // Group results by category for display
   const grouped = useMemo(() => {
-    const out: Record<GeneCategory, Gene[]> = { hemoglobin: [], membrane: [], enzyme: [] };
+    const out: Record<GeneCategory, Gene[]> = { hemoglobin: [], membrane: [], enzyme: [], other: [] };
     results.forEach((g) => out[g.category].push(g));
     return out;
   }, [results]);
+  // Keyboard order follows display order (grouped)
+  const ordered = useMemo(() => (Object.keys(grouped) as GeneCategory[]).flatMap((c) => grouped[c]), [grouped]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -65,7 +73,7 @@ export function GeneSearch({ value, onChange }: Props) {
     if (e.key === "Enter") {
       e.preventDefault();
       if (results.length > 0) {
-        const match = results[Math.min(activeIndex, results.length - 1)];
+        const match = ordered[Math.min(activeIndex, ordered.length - 1)];
         if (match) selectGene(match.symbol);
       }
     } else if (e.key === "ArrowDown") {
@@ -113,7 +121,7 @@ export function GeneSearch({ value, onChange }: Props) {
             <>
               {query.trim() === "" && (
                 <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  All genes — type to filter
+                  {`Most used genes — type to search all ${GENES.length} panel genes`}
                 </p>
               )}
               {(Object.keys(grouped) as GeneCategory[]).map((cat) =>

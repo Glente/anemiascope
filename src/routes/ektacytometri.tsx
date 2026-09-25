@@ -307,7 +307,7 @@ function EktaPage() {
         <p className="flex items-start gap-2 text-xs text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Files are read directly by your browser and kept only in this tab's memory. They are never
-          uploaded, stored or sent anywhere, and disappear when you close or reload the tab.
+          uploaded or sent anywhere, and disappear when you close or reload the tab. Reference controls are the exception: they are saved in this browser's own storage on this computer (still never online) until you delete them.
           Based on the Osmoscan Shiny app by Andreas Glenthøj, Danish Center for Hemoglobinopathies.
         </p>
       </div>

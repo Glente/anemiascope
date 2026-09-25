@@ -47,6 +47,8 @@ export function GeneSearch({ value, onChange }: Props) {
     results.forEach((g) => out[g.category].push(g));
     return out;
   }, [results]);
+  // Keyboard order follows display order (grouped)
+  const ordered = useMemo(() => (Object.keys(grouped) as GeneCategory[]).flatMap((c) => grouped[c]), [grouped]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -71,7 +73,7 @@ export function GeneSearch({ value, onChange }: Props) {
     if (e.key === "Enter") {
       e.preventDefault();
       if (results.length > 0) {
-        const match = results[Math.min(activeIndex, results.length - 1)];
+        const match = ordered[Math.min(activeIndex, ordered.length - 1)];
         if (match) selectGene(match.symbol);
       }
     } else if (e.key === "ArrowDown") {

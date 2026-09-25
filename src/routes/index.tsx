@@ -58,7 +58,7 @@ const StructureViewer = lazy(() => import("@/components/StructureViewer"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Variant workspace — Anemia Variant Board" },
+      { title: "Variant workspace — Anemiascope" },
       {
         name: "description",
         content:

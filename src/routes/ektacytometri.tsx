@@ -13,7 +13,7 @@ import { keyParams, parseOsmoscan, type CsvFormat, type OsmoscanFile } from "@/l
 export const Route = createFileRoute("/ektacytometri")({
   head: () => ({
     meta: [
-      { title: "Ektacytometry curves — Anemia Variant Board" },
+      { title: "Ektacytometry curves — Anemiascope" },
       {
         name: "description",
         content: "Plot Osmoscan ektacytometry curves for patient and controls, locally in your browser.",

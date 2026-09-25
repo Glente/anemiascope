@@ -19,7 +19,7 @@ import { caseStore, LAB_FIELDS, useCase } from "@/lib/case-store";
 export const Route = createFileRoute("/patient")({
   head: () => ({
     meta: [
-      { title: "Case & labs — Anemia Variant Board" },
+      { title: "Case & labs — Anemiascope" },
       {
         name: "description",
         content:

@@ -27,7 +27,7 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar, prov
   const PptxGenJS = (await import("pptxgenjs")).default;
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_16x9";
-  pptx.author = "Anemia Variant Board";
+  pptx.author = "Anemiascope";
   pptx.title = `${gene.symbol} variant — board discussion`;
 
   const parsed = parseVariant(state.variantInput);

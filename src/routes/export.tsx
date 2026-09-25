@@ -25,7 +25,7 @@ import { describeVariant, parseVariant } from "@/lib/variant";
 export const Route = createFileRoute("/export")({
   head: () => ({
     meta: [
-      { title: "Board slides — Anemia Variant Board" },
+      { title: "Board slides — Anemiascope" },
       {
         name: "description",
         content:

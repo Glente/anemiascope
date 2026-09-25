@@ -58,13 +58,13 @@ const StructureViewer = lazy(() => import("@/components/StructureViewer"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Variant workspace — Anemia Variant Board" },
+      { title: "Variant workspace — Anemiascope" },
       {
         name: "description",
         content:
           "Evaluate red cell membrane, enzyme and hemoglobin variants with UniProt, ClinVar, gnomAD, OMIM and Orphanet evidence plus an AlphaFold 3D view.",
       },
-      { property: "og:title", content: "Variant workspace — Anemia Variant Board" },
+      { property: "og:title", content: "Variant workspace — Anemiascope" },
       {
         property: "og:description",
         content:

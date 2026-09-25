@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Dna className="h-4.5 w-4.5" />
             </span>
             <span className="truncate font-semibold tracking-tight">
-              Anemia Variant Board
+              Anemiascope
             </span>
           </Link>
           <nav className="col-span-2 grid grid-cols-3 gap-1 sm:col-span-1 sm:flex sm:items-center">

@@ -64,12 +64,22 @@ function parseWith(text: string, fmt: CsvFormat, fileName: string): OsmoscanFile
   };
 }
 
-/** Tries the chosen CSV style first, then the other one. */
-export function parseOsmoscan(text: string, fmt: CsvFormat, fileName: string) {
-  return (
-    parseWith(text, fmt, fileName) ??
-    parseWith(text, fmt === "EU" ? "US" : "EU", fileName)
-  );
+/** Guesses EU (semicolon + decimal comma) vs US (comma) from the first lines. */
+export function detectFormat(text: string): CsvFormat {
+  const head = text.split(/\r?\n/).slice(0, 40).join("\n");
+  const semi = (head.match(/;/g) || []).length;
+  const comma = (head.match(/,/g) || []).length;
+  return semi >= comma / 2 && semi > 0 ? "EU" : "US";
+}
+
+/** Detects the CSV style automatically, falling back to the other one. */
+export function parseOsmoscan(text: string, fileName: string) {
+  const fmt = detectFormat(text);
+  const a = parseWith(text, fmt, fileName);
+  if (a) return { file: a, format: fmt };
+  const other: CsvFormat = fmt === "EU" ? "US" : "EU";
+  const b = parseWith(text, other, fileName);
+  return b ? { file: b, format: other } : null;
 }
 
 /** EImin, Omin, EImax, Omax, EIhyper, Ohyper, Area — in file order. */

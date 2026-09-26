@@ -1,3 +1,4 @@
+import { G6pdClassificationPanel } from "@/components/G6pdClassificationPanel";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GlobinEvidence, ithaQuery } from "@/components/GlobinEvidence";

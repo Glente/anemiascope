@@ -1,4 +1,5 @@
-import { ExternalLink, FileSearch } from "lucide-react";
+import { ExternalLink, FileSearch, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtTime, type ProvRow } from "@/lib/provenance";
@@ -15,30 +16,58 @@ export function ProvenancePanel({ rows }: { rows: ProvRow[] }) {
           evaluation, on the slides, or both.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 px-4 sm:px-6">
+      <CardContent className="space-y-2 px-4 sm:px-6">
         {rows.map((r) => (
-          <div key={r.source} className="rounded-md border border-border/70 p-3 text-sm">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
-              <span className="font-semibold">{r.source}</span>
-              <Badge variant="outline" className="justify-self-end sm:justify-self-auto">{r.kind}</Badge>
-              <a
-                href={r.viewUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="col-span-2 inline-flex items-center gap-1 text-xs underline underline-offset-2 sm:col-span-1 sm:ml-auto"
-              >
-                Open record <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-            <dl className="mt-2 grid gap-x-3 gap-y-1 text-xs sm:grid-cols-[8rem_1fr]">
-              <dt className="text-muted-foreground">Request URL</dt>
-              <dd className="break-all font-mono">{r.sourceUrl || "—"}</dd>
-              <dt className="text-muted-foreground">Retrieved</dt>
-              <dd>{fmtTime(r.retrievedAt)}</dd>
-              <dt className="text-muted-foreground">Record version</dt>
-              <dd>{r.recordVersion || "not reported by source"}</dd>
-            </dl>
-            <div className="mt-2 overflow-x-auto">
+          <ProvRowItem key={r.source} row={r} />
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProvRowItem({ row: r }: { row: ProvRow }) {
+  const [open, setOpen] = useState(false);
+  const live = r.kind === "live lookup";
+  return (
+    <div className="rounded-md border border-border/70 text-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 p-3 text-left"
+      >
+        {open ? (
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        )}
+        <span className="font-semibold">{r.source}</span>
+        <Badge variant={live ? "default" : "outline"} className="ml-1 shrink-0">
+          {r.kind}
+        </Badge>
+        <span className="ml-auto hidden text-xs text-muted-foreground sm:inline">
+          {r.fields.length} field{r.fields.length === 1 ? "" : "s"}
+        </span>
+        <a
+          href={r.viewUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="ml-2 inline-flex shrink-0 items-center gap-1 text-xs underline underline-offset-2"
+        >
+          Open <ExternalLink className="h-3 w-3" />
+        </a>
+      </button>
+      {open && (
+        <div className="px-3 pb-3">
+          <dl className="grid gap-x-3 gap-y-1 text-xs sm:grid-cols-[8rem_1fr]">
+            <dt className="text-muted-foreground">Request URL</dt>
+            <dd className="break-all font-mono">{r.sourceUrl || "—"}</dd>
+            <dt className="text-muted-foreground">Retrieved</dt>
+            <dd>{fmtTime(r.retrievedAt)}</dd>
+            <dt className="text-muted-foreground">Record version</dt>
+            <dd>{r.recordVersion || "not reported by source"}</dd>
+          </dl>
+          <div className="mt-2 overflow-x-auto">
             <table className="min-w-[32rem] w-full text-xs">
               <thead className="text-left text-muted-foreground">
                 <tr>
@@ -63,10 +92,9 @@ export function ProvenancePanel({ rows }: { rows: ProvRow[] }) {
                 ))}
               </tbody>
             </table>
-            </div>
           </div>
-        ))}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 }

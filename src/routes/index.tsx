@@ -236,7 +236,9 @@ function Workspace() {
                 />
               </div>
 
-              <IthaSearch loading={ithaLoading} loadedId={state.ithaId} onLoad={(id) => void loadIthaId(id)} />
+              {gene.category === "hemoglobin" && (
+                <IthaSearch loading={ithaLoading} loadedId={state.ithaId} onLoad={(id) => void loadIthaId(id)} />
+              )}
 
                <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">

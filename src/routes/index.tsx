@@ -221,6 +221,8 @@ function Workspace() {
                 </p>
               )}
 
+              {gene.symbol === "G6PD" && <G6pdClassificationPanel presetLabel={state.presetLabel} presets={gene.presets} />}
+
               <div className="space-y-1.5">
                 <Label htmlFor="variant">Variant</Label>
                 <Input

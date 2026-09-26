@@ -2,12 +2,41 @@ import { PANEL_GENES, PANEL_MEMBERSHIP } from "./panel-genes";
 
 export type GeneCategory = "membrane" | "enzyme" | "hemoglobin" | "other";
 
+/** Revised WHO classification of G6PD variants (WHO Malaria Policy Advisory Group, 2022). */
+export type G6pdWhoClass = "A" | "B" | "C" | "U";
+/** Traditional WHO classification (1967/1985), historical classes I–V. */
+export type G6pdHistoricalClass = "I" | "II" | "III" | "IV" | "V";
+
+export type G6pdClassification = {
+  who: G6pdWhoClass;
+  historical: G6pdHistoricalClass;
+  /** Typical residual activity (% of normal) underlying the class, when reported. */
+  activity?: string;
+};
+
+export const G6PD_WHO_CLASSES: Record<G6pdWhoClass, { title: string; criteria: string }> = {
+  A: { title: "Class A", criteria: "Median activity < 20 % with chronic non-spherocytic hemolytic anemia (CNSHA)." },
+  B: { title: "Class B", criteria: "Median activity < 45 %; acute hemolysis triggered by oxidants, fava beans or infection." },
+  C: { title: "Class C", criteria: "Median activity 60–150 %; no hemolysis." },
+  U: { title: "Class U", criteria: "Any activity; uncertain clinical significance." },
+};
+
+export const G6PD_HISTORICAL_CLASSES: Record<G6pdHistoricalClass, { title: string; criteria: string }> = {
+  I: { title: "Class I", criteria: "Severe deficiency with chronic non-spherocytic hemolytic anemia." },
+  II: { title: "Class II", criteria: "Severe deficiency, < 10 % activity; intermittent acute hemolysis." },
+  III: { title: "Class III", criteria: "Moderate deficiency, 10–60 % activity; hemolysis with stressors." },
+  IV: { title: "Class IV", criteria: "Normal activity, 60–150 %." },
+  V: { title: "Class V", criteria: "Increased activity, > 150 %." },
+};
+
 export type VariantPreset = {
   label: string;
   protein: string;
   cdna?: string;
   residue?: number;
   note?: string;
+  /** Only set for G6PD variants. */
+  g6pd?: G6pdClassification;
 };
 
 export type Gene = {
@@ -191,13 +220,27 @@ const CURATED: Gene[] = [
         protein: "p.Ser188Phe",
         cdna: "c.563C>T",
         residue: 188,
-        note: "WHO class II; severe acute hemolysis with fava beans and oxidant drugs.",
+        note: "Severe acute hemolysis with fava beans and oxidant drugs.",
+        g6pd: { who: "B", historical: "II", activity: "< 10 %" },
       },
-      { label: "G6PD A- (202A/376G)", protein: "p.Val68Met", cdna: "c.202G>A", residue: 68 },
-      { label: "G6PD A+ (376G)", protein: "p.Asn126Asp", cdna: "c.376A>G", residue: 126 },
-      { label: "G6PD Canton", protein: "p.Arg459Leu", cdna: "c.1376G>T", residue: 459 },
-      { label: "G6PD Kaiping", protein: "p.Arg463His", cdna: "c.1388G>A", residue: 463 },
-      { label: "G6PD Union", protein: "p.Arg454Cys", cdna: "c.1360C>T", residue: 454 },
+      {
+        label: "G6PD A- (202A/376G)",
+        protein: "p.Val68Met",
+        cdna: "c.202G>A",
+        residue: 68,
+        note: "Usually in cis with c.376A>G (p.Asn126Asp).",
+        g6pd: { who: "B", historical: "III", activity: "10–60 %" },
+      },
+      {
+        label: "G6PD A+ (376G)",
+        protein: "p.Asn126Asp",
+        cdna: "c.376A>G",
+        residue: 126,
+        g6pd: { who: "C", historical: "IV", activity: "60–150 %" },
+      },
+      { label: "G6PD Canton", protein: "p.Arg459Leu", cdna: "c.1376G>T", residue: 459, g6pd: { who: "B", historical: "II" } },
+      { label: "G6PD Kaiping", protein: "p.Arg463His", cdna: "c.1388G>A", residue: 463, g6pd: { who: "B", historical: "II" } },
+      { label: "G6PD Union", protein: "p.Arg454Cys", cdna: "c.1360C>T", residue: 454, g6pd: { who: "B", historical: "II" } },
     ],
   },
   {

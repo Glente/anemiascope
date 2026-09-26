@@ -1,3 +1,4 @@
+import { G6pdClassificationPanel } from "@/components/G6pdClassificationPanel";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GlobinEvidence, ithaQuery } from "@/components/GlobinEvidence";
@@ -220,6 +221,8 @@ function Workspace() {
                   No canonical presets curated for {gene.symbol} — enter the variant below.
                 </p>
               )}
+
+              {gene.symbol === "G6PD" && <G6pdClassificationPanel presetLabel={state.presetLabel} presets={gene.presets} />}
 
               <div className="space-y-1.5">
                 <Label htmlFor="variant">Variant</Label>

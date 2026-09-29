@@ -163,9 +163,22 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar, prov
     impact.map((t) => ({ text: t, options: { bullet: { code: "2022" }, breakLine: true } })),
     { x: 5.0, y: 1.65, w: 4.4, h: 3.0, fontFace: H.body, fontSize: 13, color: INK, lineSpacing: 20 },
   );
-  s4.addText(`${gene.inheritance} · ${gene.summary}`, {
-    x: 0.6, y: 4.8, w: 8.8, h: 0.6, fontFace: H.body, fontSize: 12, color: SLATE,
-  });
+  if (uniprot?.functionText) {
+    s4.addText(
+      [
+        { text: "Protein function (UniProt)", options: { fontSize: 13, bold: true, color: INK, breakLine: true } },
+        { text: uniprot.functionText, options: { fontSize: 11, color: SLATE } },
+      ],
+      { x: 0.6, y: 4.75, w: 8.8, h: 0.55, fontFace: H.body, valign: "top", fit: "shrink" },
+    );
+    s4.addText(`${gene.inheritance} · ${gene.summary}`, {
+      x: 0.6, y: 5.32, w: 8.8, h: 0.28, fontFace: H.body, fontSize: 10, color: SLATE, fit: "shrink",
+    });
+  } else {
+    s4.addText(`${gene.inheritance} · ${gene.summary}`, {
+      x: 0.6, y: 4.8, w: 8.8, h: 0.6, fontFace: H.body, fontSize: 12, color: SLATE,
+    });
+  }
 
   /* ---------- 5. Structure ---------- */
   const s5 = pptx.addSlide();

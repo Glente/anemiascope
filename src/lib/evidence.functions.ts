@@ -107,6 +107,11 @@ export const fetchUniProt = createServerFn({ method: "GET" })
         audit.sequenceVersion ? `sequence v${audit.sequenceVersion}` : null,
         audit.lastAnnotationUpdateDate ? `updated ${audit.lastAnnotationUpdateDate}` : null,
       ].filter(Boolean).join(" · ");
+      const functionComment = (json["comments"] ?? []).find(
+        (c: any) => c?.commentType === "FUNCTION",
+      );
+      const functionText: string | null =
+        functionComment?.texts?.map((t: any) => String(t?.value ?? "")).join(" ").trim() || null;
       return {
         provenance: prov(url, version || null),
         accession: json["primaryAccession"] ?? data.accession,
@@ -117,6 +122,7 @@ export const fetchUniProt = createServerFn({ method: "GET" })
         geneName: json["genes"]?.[0]?.geneName?.value ?? "",
         length: sequence.length,
         sequence,
+        functionText,
         residueAa: residue && sequence[residue - 1] ? sequence[residue - 1]! : null,
         sequenceWindow:
           residue && sequence

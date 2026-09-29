@@ -428,6 +428,12 @@ function Workspace() {
                   <p>
                     <strong>{uniprot.data?.proteinName || gene.protein}</strong> — {uniprot.data?.length || "?"} aa
                   </p>
+                  {uniprot.data?.functionText && (
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Function: </span>
+                      {uniprot.data.functionText}
+                    </p>
+                  )}
                   {uniprot.data?.sequenceWindow && residue && (
                     <p className="font-mono text-[11px] tracking-wider">
                       …{uniprot.data.sequenceWindow}… (residue {residue} centred)

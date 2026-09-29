@@ -30,6 +30,7 @@ export type UniProtInfo = {
   residueAa: string | null;
   sequenceWindow: string | null;
   sequence?: string | undefined;
+  functionText: string | null;
   features: UniProtFeature[];
   knownVariantsAtResidue: { description: string; alt: string }[];
   error?: string;
@@ -58,10 +59,11 @@ export const fetchUniProt = createServerFn({ method: "GET" })
       length: 0,
       residueAa: null,
       sequenceWindow: null,
+      functionText: null,
       features: [],
       knownVariantsAtResidue: [],
     };
-    const url = `https://rest.uniprot.org/uniprotkb/${data.accession}.json?fields=accession,protein_name,gene_names,sequence,ft_domain,ft_region,ft_binding,ft_act_site,ft_transmem,ft_motif,ft_variant,ft_site,ft_disulfid`;
+    const url = `https://rest.uniprot.org/uniprotkb/${data.accession}.json?fields=accession,protein_name,gene_names,sequence,cc_function,ft_domain,ft_region,ft_binding,ft_act_site,ft_transmem,ft_motif,ft_variant,ft_site,ft_disulfid`;
     base.provenance = prov(url);
     try {
       const res = await fetch(url, { headers: { accept: "application/json" } });
@@ -105,6 +107,11 @@ export const fetchUniProt = createServerFn({ method: "GET" })
         audit.sequenceVersion ? `sequence v${audit.sequenceVersion}` : null,
         audit.lastAnnotationUpdateDate ? `updated ${audit.lastAnnotationUpdateDate}` : null,
       ].filter(Boolean).join(" · ");
+      const functionComment = (json["comments"] ?? []).find(
+        (c: any) => c?.commentType === "FUNCTION",
+      );
+      const functionText: string | null =
+        functionComment?.texts?.map((t: any) => String(t?.value ?? "")).join(" ").trim() || null;
       return {
         provenance: prov(url, version || null),
         accession: json["primaryAccession"] ?? data.accession,
@@ -115,6 +122,7 @@ export const fetchUniProt = createServerFn({ method: "GET" })
         geneName: json["genes"]?.[0]?.geneName?.value ?? "",
         length: sequence.length,
         sequence,
+        functionText,
         residueAa: residue && sequence[residue - 1] ? sequence[residue - 1]! : null,
         sequenceWindow:
           residue && sequence

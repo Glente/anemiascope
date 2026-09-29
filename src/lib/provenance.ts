@@ -48,6 +48,15 @@ export function buildProvenance(args: {
       { field: "accession", value: uniprot?.accession ?? gene.uniprot, usedIn: both },
       { field: "proteinName", value: uniprot?.proteinName || "—", usedIn: both },
       { field: "sequence.length", value: String(uniprot?.length ?? "—"), usedIn: both },
+      {
+        field: "function (UniProt comment)",
+        value: uniprot?.functionText
+          ? uniprot.functionText.length > 120
+            ? `${uniprot.functionText.slice(0, 120)}…`
+            : uniprot.functionText
+          : "—",
+        usedIn: both,
+      },
       ...(r
         ? [
             { field: `sequence[${r}]`, value: uniprot?.residueAa ?? "—", usedIn: ev },

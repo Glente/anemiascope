@@ -52,7 +52,7 @@ import {
   transcriptQuery,
   uniProtQuery,
 } from "@/lib/evidence-queries";
-import { describeVariant, parseVariant, substitutionContext } from "@/lib/variant";
+import { describeVariant, parseVariant, substitutionContext, translateVariant } from "@/lib/variant";
 
 const StructureViewer = lazy(() => import("@/components/StructureViewer"));
 

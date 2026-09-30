@@ -132,3 +132,47 @@ export function substitutionContext(p: ParsedVariant): string[] {
   if (p.refAa === "C" || p.altAa === "C") notes.push("Cysteine change may alter disulphide bonding or add a free thiol.");
   return notes;
 }
+
+const CODON_TABLE: Record<string, string> = (() => {
+  const b = "TCAG", aa = "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
+  const m: Record<string, string> = {};
+  let i = 0;
+  for (const x of b) for (const y of b) for (const z of b) m[x + y + z] = aa[i++]!;
+  return m;
+})();
+const three = (a: string) => (a === "*" ? "Ter" : (ONE_TO_THREE[a] ?? a));
+
+export type Translation = { kind: "c2p"; protein: string; note?: string } | { kind: "p2c"; options: string[]; note?: string } | { kind: "error"; note: string };
+
+/** Predict p. from a simple coding substitution, or candidate c. SNVs from a protein missense/nonsense. Uses the transcript CDS. */
+export function translateVariant(input: string, cds: string): Translation | null {
+  const raw = input.trim();
+  if (!raw || !cds) return null;
+  const c = raw.match(/c\.(\d+)([ACGT])>([ACGT])/i);
+  if (c && !/c\.\[/.test(raw)) {
+    const pos = Number(c[1]), ref = c[2]!.toUpperCase(), alt = c[3]!.toUpperCase();
+    if (pos > cds.length) return { kind: "error", note: `c.${pos} is beyond the coding sequence (${cds.length} nt).` };
+    if (cds[pos - 1] !== ref) return { kind: "error", note: `Reference base at c.${pos} is ${cds[pos - 1]}, not ${ref} — check transcript.` };
+    const codonNo = Math.ceil(pos / 3), start = (codonNo - 1) * 3;
+    const codon = cds.slice(start, start + 3);
+    const mut = codon.split(""); mut[(pos - 1) % 3] = alt;
+    const a = CODON_TABLE[codon] ?? "?", b = CODON_TABLE[mut.join("")] ?? "?";
+    const protein = a === b ? `p.(${three(a)}${codonNo}=)` : codonNo === 1 && a === "M" ? "p.(Met1?)" : `p.(${three(a)}${codonNo}${three(b)})`;
+    return { kind: "c2p", protein, note: `${codon} → ${mut.join("")}` };
+  }
+  const p = parseVariant(raw);
+  if (!/^c\./i.test(raw) && !p.cdna && p.residue && p.refAa && p.altAa) {
+    const start = (p.residue - 1) * 3;
+    const codon = cds.slice(start, start + 3);
+    if (codon.length < 3) return { kind: "error", note: `Residue ${p.residue} is beyond the coding sequence.` };
+    if (CODON_TABLE[codon] !== p.refAa) return { kind: "error", note: `Codon ${p.residue} (${codon}) encodes ${three(CODON_TABLE[codon] ?? "?")}, not ${three(p.refAa)}.` };
+    const options: string[] = [];
+    for (let i = 0; i < 3; i++) for (const nt of "ACGT") {
+      if (nt === codon[i]) continue;
+      const m = codon.split(""); m[i] = nt;
+      if (CODON_TABLE[m.join("")] === p.altAa) options.push(`c.${start + i + 1}${codon[i]}>${nt}`);
+    }
+    return options.length ? { kind: "p2c", options } : { kind: "p2c", options: [], note: "Not reachable by a single-nucleotide change." };
+  }
+  return null;
+}

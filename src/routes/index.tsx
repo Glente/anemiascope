@@ -281,6 +281,24 @@ function Workspace() {
                       <Badge variant="outline">{describeVariant(parsed)}</Badge>
                     )}
                   </div>
+                  {(() => {
+                    const t = translateVariant(state.variantInput, transcript.data?.cds ?? "");
+                    if (!t) return null;
+                    const tx = transcript.data?.transcriptId ?? "";
+                    if (t.kind === "error") return <p className="mt-2 text-destructive">{t.note}</p>;
+                    if (t.kind === "c2p") return (
+                      <p className="mt-2"><span className="text-muted-foreground">Predicted protein ({tx}): </span><span className="font-mono font-semibold">{t.protein}</span> <span className="text-muted-foreground">· codon {t.note}</span></p>
+                    );
+                    return (
+                      <div className="mt-2">
+                        <span className="text-muted-foreground">Possible cDNA ({tx}): </span>
+                        {t.options.length ? t.options.map((o) => (
+                          <button key={o} type="button" className="mr-1 rounded border px-1.5 py-0.5 font-mono hover:bg-muted"
+                            onClick={() => caseStore.set({ variantInput: `${o} (${state.variantInput.replace(/^p\./, "p.")})` })}>{o}</button>
+                        )) : <span>{t.note}</span>}
+                      </div>
+                    );
+                  })()}
                   {uniprot.data?.residueAa && residue && (
                     <p className="mt-2 text-muted-foreground">
                       UniProt residue {residue} is {uniprot.data.residueAa}

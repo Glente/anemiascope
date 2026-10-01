@@ -50,8 +50,16 @@ export type IthaInfo = {
 };
 
 function extractPhpvars(html: string): any | null {
-  const i = html.indexOf('{"phpvars"');
+  // phpvars may be top-level ({"phpvars":…) or nested inside another object (…,"phpvars":{…})
+  const k = html.indexOf('"phpvars":');
+  if (k < 0) return null;
+  const i = html.indexOf("{", k + 10);
   if (i < 0) return null;
+  const inner = extractObject(html, i);
+  return inner ? { phpvars: inner } : null;
+}
+
+function extractObject(html: string, i: number): any | null {
   // walk braces to find the end of the JSON object
   let depth = 0, inStr = false, esc = false;
   for (let j = i; j < html.length; j++) {

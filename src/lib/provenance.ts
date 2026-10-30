@@ -7,6 +7,9 @@ import type {
   OmimResult,
   UniProtInfo,
 } from "@/lib/evidence.functions";
+import { describeAssembly } from "@/lib/pdb-structures";
+import { predictionRows, type PredictionResult } from "@/lib/predictions";
+import type { PdbMappingResult } from "@/lib/structure.functions";
 import type { ParsedVariant } from "@/lib/variant";
 
 export type Use = "evaluation" | "slides";
@@ -32,8 +35,10 @@ export function buildProvenance(args: {
   alphafold?: AlphaFoldInfo | undefined;
   clinvar?: ClinVarResult | undefined;
   omim?: OmimResult | undefined;
+  predictions?: PredictionResult | undefined;
+  pdb?: PdbMappingResult | undefined;
 }): ProvRow[] {
-  const { gene, parsed, uniprot, alphafold, clinvar, omim } = args;
+  const { gene, parsed, uniprot, alphafold, clinvar, omim, predictions, pdb } = args;
   const r = parsed.residue;
   const rows: ProvRow[] = [];
 
@@ -120,6 +125,52 @@ export function buildProvenance(args: {
       })),
     ],
   });
+
+  if (pdb) {
+    const ok = "segments" in pdb;
+    rows.push({
+      source: "PDBe / SIFTS",
+      kind: ok ? "live lookup" : "not retrieved",
+      sourceUrl: pdb.provenance.sourceUrl,
+      viewUrl: links.pdbe(pdb.pdbId),
+      retrievedAt: pdb.provenance.retrievedAt,
+      recordVersion: pdb.provenance.recordVersion ?? (ok ? null : pdb.error),
+      fields: ok
+        ? [
+            { field: "PDB entry", value: pdb.pdbId.toUpperCase(), usedIn: both },
+            {
+              field: "biological assembly",
+              value: pdb.assembly ? `${pdb.assembly.id} — ${describeAssembly(pdb.assembly)}` : "—",
+              usedIn: both,
+            },
+            {
+              field: "UniProt range mapped",
+              value: pdb.segments.map((g) => `${g.unpStart}–${g.unpEnd}`).join(", "),
+              usedIn: ev,
+            },
+          ]
+        : [],
+    });
+  }
+
+  if (predictions) {
+    rows.push({
+      source: "Ensembl VEP",
+      kind: predictions.provenance && !predictions.error ? "live lookup" : "not retrieved",
+      sourceUrl: predictions.provenance?.sourceUrl ?? "",
+      viewUrl: links.vep(),
+      retrievedAt: predictions.provenance?.retrievedAt ?? null,
+      recordVersion: predictions.provenance?.recordVersion ?? predictions.error ?? null,
+      fields: [
+        { field: "HGVS query", value: predictions.query, usedIn: both },
+        ...predictionRows(predictions).map((r) => ({
+          field: r.tool,
+          value: `${r.value} — ${r.call}`,
+          usedIn: both,
+        })),
+      ],
+    });
+  }
 
   rows.push({
     source: "OMIM",

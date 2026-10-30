@@ -20,6 +20,10 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { GeneSearch } from "@/components/GeneSearch";
 import { IthaSearch } from "@/components/IthaSearch";
+import { PredictionsCard } from "@/components/PredictionsCard";
+import { describeAssembly } from "@/lib/pdb-structures";
+import { predictionQuery } from "@/lib/predictions";
+import type { StructureContext, StructureSource } from "@/components/StructureViewer";
 import { ProteinMap } from "@/components/ProteinMap";
 import { ProvenancePanel } from "@/components/ProvenancePanel";
 import { buildProvenance } from "@/lib/provenance";
@@ -47,6 +51,9 @@ import {
   ithaQuery,
   links,
   omimQuery,
+  pdbMappingQuery,
+  pdbStructuresQuery,
+  predictionQuery as vepQuery,
   transcriptQuery,
   uniProtQuery,
 } from "@/lib/evidence-queries";
@@ -89,8 +96,11 @@ function Workspace() {
   const parsed = useMemo(() => parseVariant(state.variantInput), [state.variantInput]);
   const residue = parsed.residue;
   const [colorTheme, setColorTheme] = useState("chain-id");
+  const [structureChoice, setStructureChoice] = useState("alphafold");
+  const [structureCtx, setStructureCtx] = useState<StructureContext | null>(null);
   const selected = useSelectedResidue();
   useEffect(() => selectionStore.set(null), [residue, gene.symbol]);
+  useEffect(() => setStructureChoice("alphafold"), [gene.uniprot]);
   const focus = selected ?? residue ?? null;
   const transcript = useQuery(transcriptQuery(gene.symbol));
   const snapshotRef = useRef<(() => Promise<string | null>) | null>(null);
@@ -100,6 +110,25 @@ function Workspace() {
   const clinvar = useQuery(clinVarQuery(gene.symbol, parsed.protein ?? parsed.cdna ?? undefined));
   const primaryMim = gene.phenotypeMim?.[0]?.mim ?? gene.mim;
   const omim = useQuery({ ...omimQuery(primaryMim ?? ""), enabled: Boolean(primaryMim) });
+  const pdbList = useQuery(pdbStructuresQuery(gene.uniprot));
+  const pdbId = structureChoice === "alphafold" ? "" : structureChoice;
+  const pdbMap = useQuery(pdbMappingQuery(pdbId, gene.uniprot));
+  const pdbMapping = pdbId && pdbMap.data && "segments" in pdbMap.data ? pdbMap.data : null;
+  const structureSource: StructureSource | null = !pdbId
+    ? { kind: "alphafold", accession: gene.uniprot }
+    : pdbMapping
+      ? {
+          kind: "pdb",
+          pdbId: pdbMapping.pdbId,
+          entityId: pdbMapping.entityId,
+          segments: pdbMapping.segments,
+          assemblyId: pdbMapping.assembly?.id,
+        }
+      : null;
+  const assemblyText = describeAssembly(pdbMapping?.assembly);
+  const txId = transcript.data?.transcriptId ?? "";
+  const predQ = predictionQuery(state.variantInput, txId, transcript.data?.cds ?? "");
+  const predictions = useQuery(vepQuery(predQ.ok ? predQ.hgvs : "", txId));
 
   const queryClient = useQueryClient();
 
@@ -148,9 +177,11 @@ function Workspace() {
     }
     caseStore.set({
       structureImage: uri,
-      structureCaption: `AlphaFold model of ${gene.protein} (${gene.uniprot})${
-        residue ? `, variant residue ${residue} highlighted` : ""
-      }`,
+      structureCaption: `${
+        pdbMapping
+          ? `PDB ${pdbMapping.pdbId.toUpperCase()}${assemblyText ? ` (${assemblyText})` : ""} — experimental structure of ${gene.protein}`
+          : `AlphaFold model of ${gene.protein} (${gene.uniprot})`
+      }${residue ? `, variant residue ${residue} highlighted` : ""}`,
     });
     toast.success("View captured — it will appear on the slides.");
   };
@@ -394,25 +425,54 @@ function Workspace() {
             onPick={(id) => void loadIthaId(id)}
           />
 
+          <PredictionsCard
+            input={state.variantInput}
+            transcriptId={transcript.data?.transcriptId ?? ""}
+            cds={transcript.data?.cds ?? ""}
+          />
+
           <Card>
             <CardHeader className="gap-3 pb-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <CardTitle className="text-base">AlphaFold structure</CardTitle>
+                <CardTitle className="text-base">3D structure</CardTitle>
                 <CardDescription>
-                  {gene.protein} ({gene.uniprot})
+                  {gene.protein} ({gene.uniprot}){pdbId ? ` · PDB ${pdbId.toUpperCase()}` : ""}
                   {focus
                     ? ` — residue ${focus} ${focus === residue ? "(variant) " : "selected "}highlighted${focus !== residue && residue ? `, variant ${residue} also shown` : ""}; click the model to pick a residue`
                     : " — enter a variant or click a position to highlight a residue"}
                 </CardDescription>
               </div>
-              <div className="grid gap-2 sm:flex sm:items-center">
+              <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
+                <Select value={structureChoice} onValueChange={setStructureChoice}>
+                  <SelectTrigger className="w-full sm:w-[240px]" aria-label="Structure source">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="alphafold">AlphaFold model (monomer)</SelectItem>
+                    {pdbList.data?.entries.length ? (
+                      <SelectGroup>
+                        <SelectLabel>Experimental (PDB, biological assembly)</SelectLabel>
+                        {pdbList.data.entries.map((e) => (
+                          <SelectItem key={e.pdbId} value={e.pdbId}>
+                            {e.pdbId.toUpperCase()}
+                            {e.resolution != null ? ` · ${e.resolution.toFixed(1)} Å` : ""}
+                            {e.coverage != null ? ` · ${Math.round(e.coverage * 100)} %` : ""}
+                            {` · ${e.unpStart}–${e.unpEnd}`}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ) : null}
+                  </SelectContent>
+                </Select>
                 <Select value={colorTheme} onValueChange={setColorTheme}>
                   <SelectTrigger className="w-full sm:w-[190px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="chain-id">Colour: chain</SelectItem>
-                    <SelectItem value="uncertainty">Colour: pLDDT confidence</SelectItem>
+                    <SelectItem value="uncertainty">
+                      {pdbId ? "Colour: B-factor" : "Colour: pLDDT confidence"}
+                    </SelectItem>
                     <SelectItem value="secondary-structure">Colour: secondary structure</SelectItem>
                     <SelectItem value="hydrophobicity">Colour: hydrophobicity</SelectItem>
                   </SelectContent>
@@ -438,26 +498,64 @@ function Workspace() {
                     </div>
                   }
                 >
-                  <StructureViewer
-                    accession={gene.uniprot}
-                    residue={residue}
-                    extra={parsed.extraResidues}
-                    colorTheme={colorTheme}
-                    focus={focus}
-                    onPick={(r) => selectionStore.set(r)}
-                    registerSnapshot={(fn) => {
-                      snapshotRef.current = fn;
-                    }}
-                  />
+                  {structureSource ? (
+                    <StructureViewer
+                      source={structureSource}
+                      onContext={setStructureCtx}
+                      residue={residue}
+                      extra={parsed.extraResidues}
+                      colorTheme={colorTheme}
+                      focus={focus}
+                      onPick={(r) => selectionStore.set(r)}
+                      registerSnapshot={(fn) => {
+                        snapshotRef.current = fn;
+                      }}
+                    />
+                  ) : (
+                    <div className="flex h-[340px] items-center justify-center rounded-lg border bg-muted/30 px-6 text-center text-sm text-muted-foreground sm:h-[460px]">
+                      {pdbMap.isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mapping{" "}
+                          {pdbId.toUpperCase()} to UniProt numbering…
+                        </>
+                      ) : (
+                        (pdbMap.data?.error ?? "Could not load this structure.")
+                      )}
+                    </div>
+                  )}
                 </Suspense>
               </ClientOnly>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <Info className="h-3.5 w-3.5" />
-                  Predicted model — not an experimental structure.
-                </span>
-                {alphafold.data?.plddt != null && (
+                {pdbMapping ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Info className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Experimental structure{" "}
+                      <a
+                        className="underline underline-offset-2"
+                        href={links.pdbe(pdbMapping.pdbId)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {pdbMapping.pdbId.toUpperCase()}
+                      </a>
+                      {assemblyText ? ` — ${assemblyText}` : ""}
+                      {pdbMapping.chains.length ? ` · chains ${pdbMapping.chains.join(", ")}` : ""}
+                      {` · UniProt ${pdbMapping.segments.map((g) => `${g.unpStart}–${g.unpEnd}`).join(", ")}`}
+                      {pdbMapping.title ? ` · ${pdbMapping.title}` : ""}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    <Info className="h-3.5 w-3.5" />
+                    Predicted monomer — not an experimental structure.
+                    {pdbList.data?.entries.length
+                      ? ` ${pdbList.data.entries.length} PDB structure(s) with the oligomeric assembly can be chosen above.`
+                      : ""}
+                  </span>
+                )}
+                {!pdbId && alphafold.data?.plddt != null && (
                   <span>
                     pLDDT at residue {residue}: <strong>{alphafold.data.plddt.toFixed(1)}</strong> —{" "}
                     {alphafold.data.plddtBand}
@@ -465,6 +563,38 @@ function Workspace() {
                 )}
                 {state.structureImage && <span className="text-primary">View captured ✓</span>}
               </div>
+
+              {pdbId && structureCtx && (
+                <div
+                  className={`rounded-md border p-3 text-xs ${
+                    !structureCtx.resolved
+                      ? "border-amber-500/40 bg-amber-500/5"
+                      : structureCtx.partners.length
+                        ? "border-primary/40 bg-primary/5"
+                        : "bg-muted/40"
+                  }`}
+                >
+                  {!structureCtx.resolved ? (
+                    <p>
+                      Residue {structureCtx.residue} is not modelled in {pdbId.toUpperCase()}{" "}
+                      (outside the crystallised construct or without density). Pick another entry or
+                      use the AlphaFold model.
+                    </p>
+                  ) : structureCtx.partners.length ? (
+                    <p>
+                      <span className="font-semibold">Subunit interface:</span> residue{" "}
+                      {structureCtx.residue} has atoms within 4 Å of chain
+                      {structureCtx.partners.length > 1 ? "s" : ""}{" "}
+                      {structureCtx.partners.join(", ")} in the biological assembly.
+                    </p>
+                  ) : (
+                    <p>
+                      Residue {structureCtx.residue} has no contact (≤ 4 Å) with other chains in the
+                      assembly.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {uniprot.data?.features?.some((f) => f.covers) && (
                 <div className="rounded-md border bg-muted/40 p-3 text-xs">
@@ -660,6 +790,8 @@ function Workspace() {
               alphafold: alphafold.data,
               clinvar: clinvar.data,
               omim: omim.data,
+              predictions: predictions.data,
+              pdb: pdbId ? pdbMap.data : undefined,
             })}
           />
 

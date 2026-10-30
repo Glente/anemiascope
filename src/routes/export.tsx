@@ -12,7 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GENES, getGene } from "@/data/genes";
 import { caseStore, LAB_FIELDS, useCase } from "@/lib/case-store";
-import { alphaFoldQuery, clinVarQuery, omimQuery, uniProtQuery } from "@/lib/evidence-queries";
+import {
+  alphaFoldQuery,
+  clinVarQuery,
+  omimQuery,
+  predictionQuery as vepQuery,
+  transcriptQuery,
+  uniProtQuery,
+} from "@/lib/evidence-queries";
+import { predictionQuery } from "@/lib/predictions";
 import { buildDeck } from "@/lib/pptx-export";
 import { describeVariant, parseVariant } from "@/lib/variant";
 
@@ -47,6 +55,11 @@ function ExportPage() {
   const alphafold = useQuery(alphaFoldQuery(gene.uniprot, parsed.residue));
   const clinvar = useQuery(clinVarQuery(gene.symbol, parsed.protein ?? parsed.cdna ?? undefined));
 
+  const transcript = useQuery(transcriptQuery(gene.symbol));
+  const txId = transcript.data?.transcriptId ?? "";
+  const predQ = predictionQuery(state.variantInput, txId, transcript.data?.cds ?? "");
+  const predictions = useQuery(vepQuery(predQ.ok ? predQ.hgvs : "", txId));
+
   const primaryMim = gene.phenotypeMim?.[0]?.mim ?? gene.mim;
   const omim = useQuery({ ...omimQuery(primaryMim ?? ""), enabled: Boolean(primaryMim) });
   const provenance = buildProvenance({
@@ -57,6 +70,7 @@ function ExportPage() {
     alphafold: alphafold.data,
     clinvar: clinvar.data,
     omim: omim.data,
+    predictions: predictions.data,
   });
 
   const filledLabs = LAB_FIELDS.filter((f) => (state.labs[f.key] ?? "").trim() !== "");
@@ -70,6 +84,7 @@ function ExportPage() {
         uniprot: uniprot.data,
         alphafold: alphafold.data,
         clinvar: clinvar.data,
+        predictions: predictions.data,
         provenance,
       });
       toast.success("PowerPoint downloaded.");
@@ -86,8 +101,8 @@ function ExportPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Board slides</h1>
           <p className="text-sm text-muted-foreground">
-            Seven slides: title, case summary, hematology, variant impact, AlphaFold view and
-            database evidence, plus a provenance slide.
+            Title, case summary, hematology, variant impact, in-silico predictions, 3D structure
+            view and database evidence, plus a provenance slide.
           </p>
         </div>
 
@@ -131,6 +146,15 @@ function ExportPage() {
                 : "ClinVar: no match"}{" "}
               · UniProt {uniprot.data?.length ?? "…"} aa · AlphaFold{" "}
               {alphafold.data?.available ? "model found" : "—"}
+            </Row>
+            <Row label="Predictions">
+              {predictions.isLoading ? (
+                <Muted>running VEP…</Muted>
+              ) : predictions.data && !predictions.data.error ? (
+                `${predictions.data.hgvsc ?? predictions.data.query} — own slide`
+              ) : (
+                <Muted>{predQ.ok ? (predictions.data?.error ?? "none") : predQ.reason}</Muted>
+              )}
             </Row>
           </CardContent>
         </Card>

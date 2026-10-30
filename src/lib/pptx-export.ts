@@ -6,6 +6,7 @@ import { flagLab, LAB_FIELDS } from "@/lib/case-store";
 import { links } from "@/lib/evidence-queries";
 import type { AlphaFoldInfo, ClinVarResult, UniProtInfo } from "@/lib/evidence.functions";
 import { fmtTime, type ProvRow } from "@/lib/provenance";
+import { predictionRows, type PredictionResult } from "@/lib/predictions";
 import { describeVariant, parseVariant, substitutionContext } from "@/lib/variant";
 
 const INK = "16212B";
@@ -20,6 +21,7 @@ export type ExportInput = {
   uniprot?: UniProtInfo | undefined;
   alphafold?: AlphaFoldInfo | undefined;
   clinvar?: ClinVarResult | undefined;
+  predictions?: PredictionResult | undefined;
   provenance?: ProvRow[] | undefined;
 };
 
@@ -31,6 +33,7 @@ export async function buildDeck({
   uniprot,
   alphafold,
   clinvar,
+  predictions,
   provenance,
 }: ExportInput) {
   const PptxGenJS = (await import("pptxgenjs")).default;
@@ -310,6 +313,58 @@ export async function buildDeck({
       fontSize: 12,
       color: SLATE,
     });
+  }
+
+  /* ---------- 4b. In-silico predictions ---------- */
+  const predRows = predictions && !predictions.error ? predictionRows(predictions) : [];
+  if (predRows.length) {
+    const sp = pptx.addSlide();
+    slideTitle(sp, "In-silico predictions");
+    const head = (t: string) => ({
+      text: t,
+      options: { bold: true, color: WHITE, fill: { color: INK } },
+    });
+    sp.addTable(
+      [
+        [head("Tool"), head("Score"), head("Call"), head("Basis")],
+        ...predRows.map((r) => [
+          { text: r.tool, options: { bold: true, color: INK } },
+          { text: r.value, options: { color: INK } },
+          {
+            text: r.call,
+            options: {
+              bold: r.tone !== "neutral",
+              color: r.tone === "damaging" ? OXBLOOD : r.tone === "benign" ? "2F6B3A" : SLATE,
+            },
+          },
+          { text: r.basis, options: { color: SLATE } },
+        ]),
+      ],
+      {
+        x: 0.5,
+        y: 1.3,
+        w: 9.0,
+        colW: [1.5, 3.0, 2.0, 2.5],
+        fontFace: H.body,
+        fontSize: 12,
+        border: { type: "solid", color: "DDD6CB", pt: 1 },
+        rowH: 0.36,
+        valign: "middle",
+      },
+    );
+    sp.addText(
+      `${predictions?.hgvsc ?? predictions?.query ?? ""} · Ensembl VEP. In-silico evidence only — apply at most one calibrated missense predictor for PP3/BP4.`,
+      {
+        x: 0.5,
+        y: 4.95,
+        w: 9.0,
+        h: 0.35,
+        fontFace: H.body,
+        fontSize: 10,
+        color: SLATE,
+        italic: true,
+      },
+    );
   }
 
   /* ---------- 5. Structure ---------- */

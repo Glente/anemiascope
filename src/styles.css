@@ -143,7 +143,10 @@
     font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   }
 
-  h1, h2, h3, .font-display {
+  h1,
+  h2,
+  h3,
+  .font-display {
     font-family: "Newsreader", Georgia, serif;
   }
 }

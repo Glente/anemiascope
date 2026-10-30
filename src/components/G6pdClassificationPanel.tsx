@@ -1,8 +1,4 @@
-import {
-  G6PD_HISTORICAL_CLASSES,
-  G6PD_WHO_CLASSES,
-  type VariantPreset,
-} from "@/data/genes";
+import { G6PD_HISTORICAL_CLASSES, G6PD_WHO_CLASSES, type VariantPreset } from "@/data/genes";
 
 export function G6pdClassificationPanel({
   presetLabel,
@@ -27,10 +23,14 @@ export function G6pdClassificationPanel({
           <div className="rounded border bg-background p-2">
             <p className="text-muted-foreground">Traditional (historical I–V)</p>
             <p className="text-sm font-semibold">{G6PD_HISTORICAL_CLASSES[c.historical].title}</p>
-            <p className="text-muted-foreground">{G6PD_HISTORICAL_CLASSES[c.historical].criteria}</p>
+            <p className="text-muted-foreground">
+              {G6PD_HISTORICAL_CLASSES[c.historical].criteria}
+            </p>
           </div>
           {c.activity && (
-            <p className="text-muted-foreground sm:col-span-2">Typical residual activity: {c.activity}</p>
+            <p className="text-muted-foreground sm:col-span-2">
+              Typical residual activity: {c.activity}
+            </p>
           )}
         </div>
       ) : (
@@ -43,12 +43,16 @@ export function G6pdClassificationPanel({
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <ul className="space-y-1">
             {Object.entries(G6PD_WHO_CLASSES).map(([k, v]) => (
-              <li key={k}><span className="font-medium">WHO {k}:</span> {v.criteria}</li>
+              <li key={k}>
+                <span className="font-medium">WHO {k}:</span> {v.criteria}
+              </li>
             ))}
           </ul>
           <ul className="space-y-1">
             {Object.entries(G6PD_HISTORICAL_CLASSES).map(([k, v]) => (
-              <li key={k}><span className="font-medium">Class {k}:</span> {v.criteria}</li>
+              <li key={k}>
+                <span className="font-medium">Class {k}:</span> {v.criteria}
+              </li>
             ))}
           </ul>
         </div>

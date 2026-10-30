@@ -4,13 +4,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,9 +42,9 @@ function PatientPage() {
           <div>
             <p className="font-medium">This case stays in your browser tab</p>
             <p className="text-muted-foreground">
-              Nothing typed here is sent to a server, saved to a database or written to your
-              disk. Closing or reloading the tab clears it. Use a local case label, never a
-              name or CPR number.
+              Nothing typed here is sent to a server, saved to a database or written to your disk.
+              Closing or reloading the tab clears it. Use a local case label, never a name or CPR
+              number.
             </p>
           </div>
         </div>
@@ -61,16 +55,61 @@ function PatientPage() {
             <CardDescription>Pseudonymised — no identifying fields</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 px-4 sm:grid-cols-2 sm:px-6">
-            <Field label="Case label" value={state.caseLabel} onChange={(v) => caseStore.set({ caseLabel: v })} placeholder="Case 1 / local study ID" />
-            <Field label="Age band" value={state.ageBand} onChange={(v) => caseStore.set({ ageBand: v })} placeholder="e.g. 20–29 years" />
-            <Field label="Sex" value={state.sex} onChange={(v) => caseStore.set({ sex: v })} placeholder="Female / Male" />
-            <Field label="Ancestry (if relevant)" value={state.ancestry} onChange={(v) => caseStore.set({ ancestry: v })} placeholder="e.g. Mediterranean" />
-            <AreaField label="Presentation" value={state.presentation} onChange={(v) => caseStore.set({ presentation: v })} placeholder="Onset, jaundice, gallstones, crises, triggers…" />
-            <AreaField label="Transfusion history" value={state.transfusion} onChange={(v) => caseStore.set({ transfusion: v })} placeholder="Episodes, frequency, last transfusion…" />
-            <AreaField label="Splenectomy / cholecystectomy" value={state.splenectomy} onChange={(v) => caseStore.set({ splenectomy: v })} placeholder="Procedures and year" />
-            <AreaField label="Family history" value={state.familyHistory} onChange={(v) => caseStore.set({ familyHistory: v })} placeholder="Affected relatives, segregation, consanguinity" />
+            <Field
+              label="Case label"
+              value={state.caseLabel}
+              onChange={(v) => caseStore.set({ caseLabel: v })}
+              placeholder="Case 1 / local study ID"
+            />
+            <Field
+              label="Age band"
+              value={state.ageBand}
+              onChange={(v) => caseStore.set({ ageBand: v })}
+              placeholder="e.g. 20–29 years"
+            />
+            <Field
+              label="Sex"
+              value={state.sex}
+              onChange={(v) => caseStore.set({ sex: v })}
+              placeholder="Female / Male"
+            />
+            <Field
+              label="Ancestry (if relevant)"
+              value={state.ancestry}
+              onChange={(v) => caseStore.set({ ancestry: v })}
+              placeholder="e.g. Mediterranean"
+            />
+            <AreaField
+              label="Presentation"
+              value={state.presentation}
+              onChange={(v) => caseStore.set({ presentation: v })}
+              placeholder="Onset, jaundice, gallstones, crises, triggers…"
+            />
+            <AreaField
+              label="Transfusion history"
+              value={state.transfusion}
+              onChange={(v) => caseStore.set({ transfusion: v })}
+              placeholder="Episodes, frequency, last transfusion…"
+            />
+            <AreaField
+              label="Splenectomy / cholecystectomy"
+              value={state.splenectomy}
+              onChange={(v) => caseStore.set({ splenectomy: v })}
+              placeholder="Procedures and year"
+            />
+            <AreaField
+              label="Family history"
+              value={state.familyHistory}
+              onChange={(v) => caseStore.set({ familyHistory: v })}
+              placeholder="Affected relatives, segregation, consanguinity"
+            />
             <div className="sm:col-span-2">
-              <AreaField label="Question for the board" value={state.question} onChange={(v) => caseStore.set({ question: v })} placeholder="e.g. Does the SPTA1 variant explain the phenotype? Is splenectomy indicated?" />
+              <AreaField
+                label="Question for the board"
+                value={state.question}
+                onChange={(v) => caseStore.set({ question: v })}
+                placeholder="e.g. Does the SPTA1 variant explain the phenotype? Is splenectomy indicated?"
+              />
             </div>
           </CardContent>
         </Card>
@@ -78,7 +117,9 @@ function PatientPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Hematology labs</CardTitle>
-            <CardDescription>Leave blank what you do not have — blanks are skipped on the slides</CardDescription>
+            <CardDescription>
+              Leave blank what you do not have — blanks are skipped on the slides
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
             {LAB_FIELDS.map((f) => {
@@ -87,7 +128,8 @@ function PatientPage() {
                 <div key={f.key} className="space-y-1.5">
                   <Label htmlFor={f.key} className="flex items-center gap-1.5 text-xs">
                     <span>
-                      {f.label} {f.unit && <span className="text-muted-foreground">({f.unit})</span>}
+                      {f.label}{" "}
+                      {f.unit && <span className="text-muted-foreground">({f.unit})</span>}
                     </span>
                     {flag && (
                       <span className="rounded bg-destructive/10 px-1 text-[10px] font-semibold text-destructive">
@@ -131,7 +173,11 @@ function PatientPage() {
   );
 }
 
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 function Field({
   label,
@@ -147,8 +193,15 @@ function Field({
   const id = slug(label);
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs">{label}</Label>
-      <Input id={id} value={value} placeholder={placeholder ?? ""} onChange={(e) => onChange(e.target.value)} />
+      <Label htmlFor={id} className="text-xs">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        value={value}
+        placeholder={placeholder ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
@@ -167,7 +220,9 @@ function AreaField({
   const id = slug(label);
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs">{label}</Label>
+      <Label htmlFor={id} className="text-xs">
+        {label}
+      </Label>
       <Textarea
         id={id}
         rows={3}

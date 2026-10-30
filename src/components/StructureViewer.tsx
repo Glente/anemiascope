@@ -136,7 +136,9 @@ export default function StructureViewer({
         if (!cancelled) {
           setStatus("error");
           setMessage(
-            e instanceof Error ? e.message : "Could not load the predicted structure for this protein.",
+            e instanceof Error
+              ? e.message
+              : "Could not load the predicted structure for this protein.",
           );
         }
       }
@@ -153,13 +155,17 @@ export default function StructureViewer({
     if (!plugin || !loadedKey) return;
     let cancelled = false;
     (async () => {
-      const [{ StructureSelectionQuery }, { MolScriptBuilder: MS }, { Script }, { StructureSelection }] =
-        await Promise.all([
-          import("molstar/lib/mol-plugin-state/helpers/structure-selection-query"),
-          import("molstar/lib/mol-script/language/builder"),
-          import("molstar/lib/mol-script/script"),
-          import("molstar/lib/mol-model/structure"),
-        ]);
+      const [
+        { StructureSelectionQuery },
+        { MolScriptBuilder: MS },
+        { Script },
+        { StructureSelection },
+      ] = await Promise.all([
+        import("molstar/lib/mol-plugin-state/helpers/structure-selection-query"),
+        import("molstar/lib/mol-script/language/builder"),
+        import("molstar/lib/mol-script/script"),
+        import("molstar/lib/mol-model/structure"),
+      ]);
       if (cancelled) return;
       const structures = plugin.managers.structure.hierarchy.current.structures;
       const old = structures.flatMap((s: any) =>
@@ -189,14 +195,21 @@ export default function StructureViewer({
       if (target !== residue) await add(`sync: selected residue ${target}`, resExpr(target));
       await add(
         `sync: contacts within 5 Å of ${target}`,
-        MS.struct.modifier.includeSurroundings({ 0: resExpr(target), radius: 5, "as-whole-residues": true }),
+        MS.struct.modifier.includeSurroundings({
+          0: resExpr(target),
+          radius: 5,
+          "as-whole-residues": true,
+        }),
       );
       const structure = plugin.managers.structure.hierarchy.current.structures[0]?.cell?.obj?.data;
       if (structure && !cancelled) {
         const sel = Script.getStructureSelection(
           (Q: any) =>
             Q.struct.generator.atomGroups({
-              "residue-test": Q.core.rel.eq([Q.struct.atomProperty.macromolecular.label_seq_id(), target]),
+              "residue-test": Q.core.rel.eq([
+                Q.struct.atomProperty.macromolecular.label_seq_id(),
+                target,
+              ]),
             }),
           structure,
         );

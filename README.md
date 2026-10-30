@@ -3,6 +3,7 @@
 I want to make a web app that can help me evaluate anemia variants, especially variants of the red blood cell membrane, enzymes and hemoglobin.
 
 Key requirements:
+
 1. Gene & variant evaluation: Support target anemia panels including red blood cell membrane genes (e.g., ANK1, SPTA1, SPTB, SLC4A1), enzyme genes (e.g., G6PD, PKLR, TPI1), and hemoglobin genes (e.g., HBA1, HBA2, HBB). Provide quick-select presets for common canonical variants alongside custom variant input (cDNA / protein notation / HGVS).
 2. Database integrations & links: Pull information and provide direct links to UniProt, AlphaFold Protein Structure Database, ClinVar, gnomAD, OMIM (omim.org with MIM numbers, phenotype summaries, and API key support), and Orphanet (ORPHA codes, inheritance, and disease classifications).
 3. 3D Protein Structure & AlphaFold visualization: Embed an interactive 3D protein structure viewer (such as MolStar) fetching AlphaFold predicted structures for the target protein, automatically highlighting and labeling where the specific variant residue is situated, showing local structural context and domains.

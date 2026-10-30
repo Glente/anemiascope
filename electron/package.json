@@ -17,9 +17,17 @@
   "build": {
     "appId": "dk.anemiascope.desktop",
     "productName": "Anemiascope",
-    "files": ["main.cjs"],
-    "directories": { "output": "release" },
-    "win": { "target": ["msi"] },
+    "files": [
+      "main.cjs"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "msi"
+      ]
+    },
     "msi": {
       "perMachine": false,
       "oneClick": true,

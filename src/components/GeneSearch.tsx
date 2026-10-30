@@ -43,12 +43,20 @@ export function GeneSearch({ value, onChange }: Props) {
 
   // Group results by category for display
   const grouped = useMemo(() => {
-    const out: Record<GeneCategory, Gene[]> = { hemoglobin: [], membrane: [], enzyme: [], other: [] };
+    const out: Record<GeneCategory, Gene[]> = {
+      hemoglobin: [],
+      membrane: [],
+      enzyme: [],
+      other: [],
+    };
     results.forEach((g) => out[g.category].push(g));
     return out;
   }, [results]);
   // Keyboard order follows display order (grouped)
-  const ordered = useMemo(() => (Object.keys(grouped) as GeneCategory[]).flatMap((c) => grouped[c]), [grouped]);
+  const ordered = useMemo(
+    () => (Object.keys(grouped) as GeneCategory[]).flatMap((c) => grouped[c]),
+    [grouped],
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -99,7 +107,9 @@ export function GeneSearch({ value, onChange }: Props) {
         <Input
           ref={inputRef}
           className="pl-8"
-          placeholder={selectedGene ? `${selectedGene.symbol} — ${selectedGene.protein}` : "Type a gene name…"}
+          placeholder={
+            selectedGene ? `${selectedGene.symbol} — ${selectedGene.protein}` : "Type a gene name…"
+          }
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -156,7 +166,6 @@ export function GeneSearch({ value, onChange }: Props) {
           )}
         </div>
       )}
-
     </div>
   );
 }

@@ -83,7 +83,11 @@ function ProvRowItem({ row: r }: { row: ProvRow }) {
                     <td className="break-all py-1 pr-2">{f.value}</td>
                     <td className="whitespace-nowrap py-1">
                       {f.usedIn.map((u) => (
-                        <Badge key={u} variant={u === "slides" ? "default" : "secondary"} className="mr-1">
+                        <Badge
+                          key={u}
+                          variant={u === "slides" ? "default" : "secondary"}
+                          className="mr-1"
+                        >
                           {u}
                         </Badge>
                       ))}

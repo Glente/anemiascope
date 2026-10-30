@@ -1,13 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Download, Eraser, Eye, EyeOff, Lock, Upload, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Eraser,
+  Eye,
+  EyeOff,
+  Lock,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { loadReferences, MIN_REFS, referenceBand, referenceParams, saveReferences, type ParamKey } from "@/lib/osmo-reference";
+import {
+  loadReferences,
+  MIN_REFS,
+  referenceBand,
+  referenceParams,
+  saveReferences,
+  type ParamKey,
+} from "@/lib/osmo-reference";
 import { keyParams, parseOsmoscan, type CsvFormat, type OsmoscanFile } from "@/lib/osmoscan";
 
 export const Route = createFileRoute("/ektacytometri")({
@@ -16,7 +33,8 @@ export const Route = createFileRoute("/ektacytometri")({
       { title: "Ektacytometry curves — Anemiascope" },
       {
         name: "description",
-        content: "Plot Osmoscan ektacytometry curves for patient and controls, locally in your browser.",
+        content:
+          "Plot Osmoscan ektacytometry curves for patient and controls, locally in your browser.",
       },
       { property: "og:title", content: "Ektacytometry curves — Anemiascope" },
       {
@@ -31,9 +49,27 @@ export const Route = createFileRoute("/ektacytometri")({
 });
 
 // Fixed hex colours so exported images look identical outside the app.
-const PALETTE = ["#1d4ed8", "#dc2626", "#15803d", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#4b5563", "#65a30d", "#9f1239"];
+const PALETTE = [
+  "#1d4ed8",
+  "#dc2626",
+  "#15803d",
+  "#d97706",
+  "#7c3aed",
+  "#0891b2",
+  "#db2777",
+  "#4b5563",
+  "#65a30d",
+  "#9f1239",
+];
 
-type Slot = { id: number; file: OsmoscanFile; legend: string; color: string; visible: boolean; format: CsvFormat };
+type Slot = {
+  id: number;
+  file: OsmoscanFile;
+  legend: string;
+  color: string;
+  visible: boolean;
+  format: CsvFormat;
+};
 let nextId = 1;
 
 function EktaPage() {
@@ -49,7 +85,9 @@ function EktaPage() {
   const refInputRef = useRef<HTMLInputElement>(null);
   const [refs, setRefs] = useState<OsmoscanFile[]>([]);
   const [showBand, setShowBand] = useState(true);
-  useEffect(() => { setRefs(loadReferences()); }, []);
+  useEffect(() => {
+    setRefs(loadReferences());
+  }, []);
   const band = useMemo(() => referenceBand(refs), [refs]);
   const refStats = useMemo(() => referenceParams(refs), [refs]);
 
@@ -62,7 +100,10 @@ function EktaPage() {
     const added: OsmoscanFile[] = [];
     for (const f of Array.from(list)) {
       const res = parseOsmoscan(await f.text(), f.name);
-      if (!res) { toast.error(`Could not read ${f.name} as an Osmoscan export.`); continue; }
+      if (!res) {
+        toast.error(`Could not read ${f.name} as an Osmoscan export.`);
+        continue;
+      }
       added.push(res.file);
     }
     const names = new Set(refs.map((r) => r.fileName));
@@ -77,7 +118,10 @@ function EktaPage() {
 
   useEffect(() => {
     if (!hasData) return;
-    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    const h = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
     window.addEventListener("beforeunload", h);
     return () => window.removeEventListener("beforeunload", h);
   }, [hasData]);
@@ -88,8 +132,18 @@ function EktaPage() {
     for (const f of Array.from(list)) {
       const text = await f.text(); // read locally — never uploaded
       const res = parseOsmoscan(text, f.name);
-      if (!res) { toast.error(`Could not read ${f.name} as an Osmoscan export.`); continue; }
-      added.push({ id: nextId++, file: res.file, format: res.format, legend: "", color: "", visible: true });
+      if (!res) {
+        toast.error(`Could not read ${f.name} as an Osmoscan export.`);
+        continue;
+      }
+      added.push({
+        id: nextId++,
+        file: res.file,
+        format: res.format,
+        legend: "",
+        color: "",
+        visible: true,
+      });
     }
     setSlots((prev) => {
       const all = [...prev, ...added];
@@ -102,15 +156,21 @@ function EktaPage() {
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const update = (id: number, patch: Partial<Slot>) => setSlots((p) => p.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  const update = (id: number, patch: Partial<Slot>) =>
+    setSlots((p) => p.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   const remove = (id: number) => setSlots((p) => p.filter((s) => s.id !== id));
-  const move = (i: number, d: number) => setSlots((p) => {
-    const j = i + d; if (j < 0 || j >= p.length) return p;
-    const n = [...p]; [n[i], n[j]] = [n[j]!, n[i]!]; return n;
-  });
+  const move = (i: number, d: number) =>
+    setSlots((p) => {
+      const j = i + d;
+      if (j < 0 || j >= p.length) return p;
+      const n = [...p];
+      [n[i], n[j]] = [n[j]!, n[i]!];
+      return n;
+    });
 
   const clearAll = () => {
-    setSlots([]); setRefId(null);
+    setSlots([]);
+    setRefId(null);
     toast.success("Ektacytometry files cleared from this tab.");
   };
 
@@ -127,9 +187,11 @@ function EktaPage() {
     img.onload = () => {
       const scale = 3;
       const c = document.createElement("canvas");
-      c.width = W * scale; c.height = H * scale;
+      c.width = W * scale;
+      c.height = H * scale;
       const ctx = c.getContext("2d")!;
-      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, c.width, c.height);
       ctx.drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
       c.toBlob((b) => b && download(b, `${baseName}.png`), "image/png");
@@ -138,9 +200,36 @@ function EktaPage() {
   };
 
   const exportCsv = () => {
-    const head = ["Description", "Sample", "Date", "EImin", "Omin", "EImax", "Omax", "EIhyper", "Ohyper", "Area"];
-    const rows = slots.map((s) => { const k = keyParams(s.file); return [s.legend, s.file.sampleName, s.file.date, k.eiMin, k.oMin, k.eiMax, k.oMax, k.eiHyper, k.oHyper, k.area]; });
-    const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    const head = [
+      "Description",
+      "Sample",
+      "Date",
+      "EImin",
+      "Omin",
+      "EImax",
+      "Omax",
+      "EIhyper",
+      "Ohyper",
+      "Area",
+    ];
+    const rows = slots.map((s) => {
+      const k = keyParams(s.file);
+      return [
+        s.legend,
+        s.file.sampleName,
+        s.file.date,
+        k.eiMin,
+        k.oMin,
+        k.eiMax,
+        k.oMax,
+        k.eiHyper,
+        k.oHyper,
+        k.area,
+      ];
+    });
+    const csv = [head, ...rows]
+      .map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
     download(new Blob([csv], { type: "text/csv" }), `${baseName}_parameters.csv`);
   };
 
@@ -150,7 +239,8 @@ function EktaPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Ektacytometry: Osmoscan</h1>
           <p className="text-sm text-muted-foreground">
-            Upload as many Osmoscan CSV exports as you like to compare patient and controls. CSV format is detected automatically.
+            Upload as many Osmoscan CSV exports as you like to compare patient and controls. CSV
+            format is detected automatically.
           </p>
         </div>
 
@@ -164,56 +254,129 @@ function EktaPage() {
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
                 onDragLeave={() => setDragging(false)}
-                onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragging(false);
+                  addFiles(e.dataTransfer.files);
+                }}
                 className={`flex w-full flex-col items-center gap-1 rounded-md border-2 border-dashed px-3 py-5 text-sm transition-colors ${dragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
               >
                 <Upload className="h-5 w-5 text-muted-foreground" />
                 <span className="font-medium">Drop CSV files or click to choose</span>
-                <span className="text-xs text-muted-foreground">Several files at once are fine</span>
+                <span className="text-xs text-muted-foreground">
+                  Several files at once are fine
+                </span>
               </button>
-              <input ref={inputRef} type="file" multiple accept=".csv,text/csv,text/plain" className="hidden"
-                aria-label="Choose Osmoscan CSV files" onChange={(e) => addFiles(e.target.files)} />
+              <input
+                ref={inputRef}
+                type="file"
+                multiple
+                accept=".csv,text/csv,text/plain"
+                className="hidden"
+                aria-label="Choose Osmoscan CSV files"
+                onChange={(e) => addFiles(e.target.files)}
+              />
 
               {slots.map((s, i) => (
                 <div key={s.id} className="space-y-1.5 rounded-md border border-border/60 p-2.5">
                   <div className="flex items-center gap-2">
-                    <input type="color" value={s.color} onChange={(e) => update(s.id, { color: e.target.value })}
-                      aria-label={`Colour for ${s.legend}`} className="h-6 w-6 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0" />
-                    <Input className="h-8" aria-label={`Description file ${i + 1}`} value={s.legend}
-                      onChange={(e) => update(s.id, { legend: e.target.value })} />
-                    <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" title={s.visible ? "Hide curve" : "Show curve"}
-                      onClick={() => update(s.id, { visible: !s.visible })}>
+                    <input
+                      type="color"
+                      value={s.color}
+                      onChange={(e) => update(s.id, { color: e.target.value })}
+                      aria-label={`Colour for ${s.legend}`}
+                      className="h-6 w-6 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+                    />
+                    <Input
+                      className="h-8"
+                      aria-label={`Description file ${i + 1}`}
+                      value={s.legend}
+                      onChange={(e) => update(s.id, { legend: e.target.value })}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 shrink-0"
+                      title={s.visible ? "Hide curve" : "Show curve"}
+                      onClick={() => update(s.id, { visible: !s.visible })}
+                    >
                       {s.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" title="Remove" onClick={() => remove(s.id)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 shrink-0"
+                      title="Remove"
+                      onClick={() => remove(s.id)}
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <p className="min-w-0 flex-1 truncate" title={s.file.fileName}>
-                      {s.file.sampleName}{s.file.date && ` · ${s.file.date.replace(/^on\s*/, "")}`} · {s.file.points.length} pts · {s.format}
+                      {s.file.sampleName}
+                      {s.file.date && ` · ${s.file.date.replace(/^on\s*/, "")}`} ·{" "}
+                      {s.file.points.length} pts · {s.format}
                     </p>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" title="Move up" disabled={i === 0} onClick={() => move(i, -1)}><ChevronUp className="h-3.5 w-3.5" /></Button>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" title="Move down" disabled={i === slots.length - 1} onClick={() => move(i, 1)}><ChevronDown className="h-3.5 w-3.5" /></Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      title="Move up"
+                      disabled={i === 0}
+                      onClick={() => move(i, -1)}
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      title="Move down"
+                      disabled={i === slots.length - 1}
+                      onClick={() => move(i, 1)}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               ))}
 
               <div className="space-y-2 text-sm">
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={lines} onChange={(e) => setLines(e.target.checked)} /> Help lines
+                  <input
+                    type="checkbox"
+                    checked={lines}
+                    onChange={(e) => setLines(e.target.checked)}
+                  />{" "}
+                  Help lines
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={annotations} onChange={(e) => setAnnotations(e.target.checked)} /> Annotations
+                  <input
+                    type="checkbox"
+                    checked={annotations}
+                    onChange={(e) => setAnnotations(e.target.checked)}
+                  />{" "}
+                  Annotations
                 </label>
                 {slots.length > 1 && (
                   <label className="flex items-center gap-2">
                     <span className="text-muted-foreground">Annotate</span>
-                    <select className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm"
-                      value={refSlot?.id} onChange={(e) => setRefId(Number(e.target.value))}>
-                      {slots.map((s) => <option key={s.id} value={s.id}>{s.legend || s.file.sampleName}</option>)}
+                    <select
+                      className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm"
+                      value={refSlot?.id}
+                      onChange={(e) => setRefId(Number(e.target.value))}
+                    >
+                      {slots.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.legend || s.file.sampleName}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 )}
@@ -230,44 +393,85 @@ function EktaPage() {
           <Card className="lg:col-start-1">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Reference controls ({refs.length})</CardTitle>
-              <CardDescription>Healthy controls forming the normal range (mean ± 2 SD). Saved in this browser only.</CardDescription>
+              <CardDescription>
+                Healthy controls forming the normal range (mean ± 2 SD). Saved in this browser only.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <button
                 type="button"
                 onClick={() => refInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setRefDragging(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setRefDragging(true);
+                }}
                 onDragLeave={() => setRefDragging(false)}
-                onDrop={(e) => { e.preventDefault(); setRefDragging(false); addRefs(e.dataTransfer.files); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setRefDragging(false);
+                  addRefs(e.dataTransfer.files);
+                }}
                 className={`flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed px-3 py-4 text-sm transition-colors ${refDragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
               >
                 <Upload className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Drop CSV files or click to choose</span>
               </button>
-              <input ref={refInputRef} type="file" multiple accept=".csv,text/csv,text/plain" className="hidden"
-                aria-label="Choose reference control CSV files" onChange={(e) => addRefs(e.target.files)} />
+              <input
+                ref={refInputRef}
+                type="file"
+                multiple
+                accept=".csv,text/csv,text/plain"
+                className="hidden"
+                aria-label="Choose reference control CSV files"
+                onChange={(e) => addRefs(e.target.files)}
+              />
               {refs.length > 0 && refs.length < MIN_REFS && (
-                <p className="text-xs text-destructive">Add at least {MIN_REFS} controls to form a normal range (5–10 recommended).</p>
+                <p className="text-xs text-destructive">
+                  Add at least {MIN_REFS} controls to form a normal range (5–10 recommended).
+                </p>
               )}
               {refs.length > 0 && (
                 <ul className="max-h-48 space-y-1 overflow-auto text-xs">
                   {refs.map((r) => (
                     <li key={r.fileName} className="flex items-center gap-2">
-                      <span className="min-w-0 flex-1 truncate" title={r.fileName}>{r.sampleName} · {r.date.replace(/^on\s*/, "")}</span>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" title="Remove"
-                        onClick={() => setAndSaveRefs(refs.filter((x) => x.fileName !== r.fileName))}><X className="h-3.5 w-3.5" /></Button>
+                      <span className="min-w-0 flex-1 truncate" title={r.fileName}>
+                        {r.sampleName} · {r.date.replace(/^on\s*/, "")}
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        title="Remove"
+                        onClick={() =>
+                          setAndSaveRefs(refs.filter((x) => x.fileName !== r.fileName))
+                        }
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
                     </li>
                   ))}
                 </ul>
               )}
               {band.length > 0 && (
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={showBand} onChange={(e) => setShowBand(e.target.checked)} /> Show normal range on plot
+                  <input
+                    type="checkbox"
+                    checked={showBand}
+                    onChange={(e) => setShowBand(e.target.checked)}
+                  />{" "}
+                  Show normal range on plot
                 </label>
               )}
               {refs.length > 0 && (
-                <Button variant="ghost" size="sm" className="w-full text-muted-foreground"
-                  onClick={() => { if (confirm("Delete all saved reference controls from this browser?")) setAndSaveRefs([]); }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-muted-foreground"
+                  onClick={() => {
+                    if (confirm("Delete all saved reference controls from this browser?"))
+                      setAndSaveRefs([]);
+                  }}
+                >
                   <Eraser className="mr-1.5 h-4 w-4" /> Delete saved references
                 </Button>
               )}
@@ -277,18 +481,38 @@ function EktaPage() {
           <Card className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 self-start">
             <CardHeader className="flex flex-row flex-wrap items-center gap-2 pb-3">
               {(["plot", "compare", "info", "values"] as const).map((t) => (
-                <Button key={t} size="sm" variant={tab === t ? "default" : "ghost"} onClick={() => setTab(t)}>
-                  {{ plot: "Plot", compare: "Compare", info: "Table: Info", values: "Table: Values" }[t]}
+                <Button
+                  key={t}
+                  size="sm"
+                  variant={tab === t ? "default" : "ghost"}
+                  onClick={() => setTab(t)}
+                >
+                  {
+                    {
+                      plot: "Plot",
+                      compare: "Compare",
+                      info: "Table: Info",
+                      values: "Table: Values",
+                    }[t]
+                  }
                 </Button>
               ))}
               {hasData && (
                 <div className="ml-auto flex gap-2">
-                  {tab === "plot" && (<>
-                    <Button size="sm" variant="outline" onClick={() => exportImage("png")}><Download className="mr-1 h-4 w-4" /> PNG</Button>
-                    <Button size="sm" variant="outline" onClick={() => exportImage("svg")}><Download className="mr-1 h-4 w-4" /> SVG</Button>
-                  </>)}
+                  {tab === "plot" && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => exportImage("png")}>
+                        <Download className="mr-1 h-4 w-4" /> PNG
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => exportImage("svg")}>
+                        <Download className="mr-1 h-4 w-4" /> SVG
+                      </Button>
+                    </>
+                  )}
                   {tab === "compare" && (
-                    <Button size="sm" variant="outline" onClick={exportCsv}><Download className="mr-1 h-4 w-4" /> CSV</Button>
+                    <Button size="sm" variant="outline" onClick={exportCsv}>
+                      <Download className="mr-1 h-4 w-4" /> CSV
+                    </Button>
                   )}
                 </div>
               )}
@@ -300,10 +524,22 @@ function EktaPage() {
                 </div>
               ) : tab === "plot" ? (
                 <div className="overflow-x-auto">
-                  <Chart ref={svgRef} band={showBand ? band : []} slots={slots.filter((s) => s.visible)} refSlot={refSlot} lines={lines} annotations={annotations} />
+                  <Chart
+                    ref={svgRef}
+                    band={showBand ? band : []}
+                    slots={slots.filter((s) => s.visible)}
+                    refSlot={refSlot}
+                    lines={lines}
+                    annotations={annotations}
+                  />
                 </div>
               ) : tab === "compare" ? (
-                <CompareTable slots={slots} refSlot={refSlot} refStats={refStats} nRefs={refs.length} />
+                <CompareTable
+                  slots={slots}
+                  refSlot={refSlot}
+                  refStats={refStats}
+                  nRefs={refs.length}
+                />
               ) : tab === "info" ? (
                 <InfoTables slots={slots} />
               ) : (
@@ -316,65 +552,126 @@ function EktaPage() {
         <p className="flex items-start gap-2 text-xs text-muted-foreground">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Files are read directly by your browser and kept only in this tab's memory. They are never
-          uploaded or sent anywhere, and disappear when you close or reload the tab. Reference controls are the exception: they are saved in this browser's own storage on this computer (still never online) until you delete them.
-          Based on the Osmoscan Shiny app by Andreas Glenthøj, Danish Center for Hemoglobinopathies.
+          uploaded or sent anywhere, and disappear when you close or reload the tab. Reference
+          controls are the exception: they are saved in this browser's own storage on this computer
+          (still never online) until you delete them. Based on the Osmoscan Shiny app by Andreas
+          Glenthøj, Danish Center for Hemoglobinopathies.
         </p>
       </div>
     </AppShell>
   );
 }
 
-function CompareTable({ slots, refSlot, refStats, nRefs }: {
-  slots: Slot[]; refSlot?: Slot | undefined; refStats: ReturnType<typeof referenceParams>; nRefs: number;
+function CompareTable({
+  slots,
+  refSlot,
+  refStats,
+  nRefs,
+}: {
+  slots: Slot[];
+  refSlot?: Slot | undefined;
+  refStats: ReturnType<typeof referenceParams>;
+  nRefs: number;
 }) {
   const hasRef = Object.keys(refStats).length > 0;
   const fmt = (x: number, key: ParamKey) => (key.startsWith("ei") ? x.toFixed(3) : x.toFixed(0));
-  const cols = [["eiMin", "EImin"], ["oMin", "Omin"], ["eiMax", "EImax"], ["oMax", "Omax"], ["eiHyper", "EIhyper"], ["oHyper", "Ohyper"], ["area", "Area"]] as const;
+  const cols = [
+    ["eiMin", "EImin"],
+    ["oMin", "Omin"],
+    ["eiMax", "EImax"],
+    ["oMax", "Omax"],
+    ["eiHyper", "EIhyper"],
+    ["oHyper", "Ohyper"],
+    ["area", "Area"],
+  ] as const;
   const ref = refSlot ? keyParams(refSlot.file) : null;
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto">
         <table className="w-full text-sm tabular-nums">
-          <thead><tr className="border-b">
-            <th className="px-2 py-1 text-left font-medium">Curve</th>
-            {cols.map(([, l]) => <th key={l} className="px-2 py-1 text-right font-medium">{l}</th>)}
-          </tr></thead>
-          <tbody>
-          {hasRef && (
-            <tr className="border-b bg-muted/40 text-xs">
-              <td className="px-2 py-1.5">Normal range (n={nRefs})</td>
-              {cols.map(([key]) => { const st = refStats[key]; return (
-                <td key={key} className="px-2 py-1.5 text-right">{st ? `${fmt(st.lo, key)}–${fmt(st.hi, key)}` : "—"}</td>
-              ); })}
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1 text-left font-medium">Curve</th>
+              {cols.map(([, l]) => (
+                <th key={l} className="px-2 py-1 text-right font-medium">
+                  {l}
+                </th>
+              ))}
             </tr>
-          )}
-          {slots.map((s) => {
-            const k = keyParams(s.file);
-            return (
-              <tr key={s.id} className="border-b last:border-0">
-                <td className="px-2 py-1.5"><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />{s.legend}</td>
+          </thead>
+          <tbody>
+            {hasRef && (
+              <tr className="border-b bg-muted/40 text-xs">
+                <td className="px-2 py-1.5">Normal range (n={nRefs})</td>
                 {cols.map(([key]) => {
-                  const v = k[key]; const r = ref?.[key];
                   const st = refStats[key];
-                  const out = v != null && st ? (v > st.hi ? "hi" : v < st.lo ? "lo" : null) : null;
-                  const diff = s !== refSlot && v != null && r != null && r !== 0 ? ((v - r) / r) * 100 : null;
                   return (
-                    <td key={key} className={`px-2 py-1.5 text-right ${out ? "font-semibold text-destructive" : ""}`}
-                      title={out ? "Outside normal range" : undefined}>
-                      {v ?? "—"}{out === "hi" ? " ↑" : out === "lo" ? " ↓" : ""}
-                      {diff != null && <span className="ml-1 text-xs text-muted-foreground">({diff > 0 ? "+" : ""}{diff.toFixed(0)}%)</span>}
+                    <td key={key} className="px-2 py-1.5 text-right">
+                      {st ? `${fmt(st.lo, key)}–${fmt(st.hi, key)}` : "—"}
                     </td>
                   );
                 })}
               </tr>
-            );
-          })}
+            )}
+            {slots.map((s) => {
+              const k = keyParams(s.file);
+              return (
+                <tr key={s.id} className="border-b last:border-0">
+                  <td className="px-2 py-1.5">
+                    <span
+                      className="mr-2 inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ background: s.color }}
+                    />
+                    {s.legend}
+                  </td>
+                  {cols.map(([key]) => {
+                    const v = k[key];
+                    const r = ref?.[key];
+                    const st = refStats[key];
+                    const out =
+                      v != null && st ? (v > st.hi ? "hi" : v < st.lo ? "lo" : null) : null;
+                    const diff =
+                      s !== refSlot && v != null && r != null && r !== 0
+                        ? ((v - r) / r) * 100
+                        : null;
+                    return (
+                      <td
+                        key={key}
+                        className={`px-2 py-1.5 text-right ${out ? "font-semibold text-destructive" : ""}`}
+                        title={out ? "Outside normal range" : undefined}
+                      >
+                        {v ?? "—"}
+                        {out === "hi" ? " ↑" : out === "lo" ? " ↓" : ""}
+                        {diff != null && (
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            ({diff > 0 ? "+" : ""}
+                            {diff.toFixed(0)}%)
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-      {slots.length > 1 && <p className="text-xs text-muted-foreground">Percentages are relative to {refSlot?.legend}.</p>}
-      {hasRef ? <p className="text-xs text-muted-foreground">Normal range = mean ± 2 SD of the saved reference controls; values outside are marked ↑/↓ in red.</p>
-        : <p className="text-xs text-muted-foreground">Add at least {MIN_REFS} reference controls to see a normal range.</p>}
+      {slots.length > 1 && (
+        <p className="text-xs text-muted-foreground">
+          Percentages are relative to {refSlot?.legend}.
+        </p>
+      )}
+      {hasRef ? (
+        <p className="text-xs text-muted-foreground">
+          Normal range = mean ± 2 SD of the saved reference controls; values outside are marked ↑/↓
+          in red.
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Add at least {MIN_REFS} reference controls to see a normal range.
+        </p>
+      )}
     </div>
   );
 }
@@ -382,67 +679,137 @@ function CompareTable({ slots, refSlot, refStats, nRefs }: {
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = name; a.click();
+  a.href = url;
+  a.download = name;
+  a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const W = 800, H = 520;
+const W = 800,
+  H = 520;
 const M = { l: 64, r: 150, t: 20, b: 52 };
-const X0 = 100, X1 = 550, Y0 = 0, Y1 = 0.65;
+const X0 = 100,
+  X1 = 550,
+  Y0 = 0,
+  Y1 = 0.65;
 const sx = (o: number) => M.l + ((o - X0) / (X1 - X0)) * (W - M.l - M.r);
 const sy = (e: number) => H - M.b - ((e - Y0) / (Y1 - Y0)) * (H - M.t - M.b);
 
-function Chart({ band, slots, refSlot, lines, annotations, ref }: {
-  band: { o: number; lo: number; hi: number; mean: number }[]; slots: Slot[]; refSlot?: Slot | undefined; lines: boolean; annotations: boolean; ref: React.Ref<SVGSVGElement>;
+function Chart({
+  band,
+  slots,
+  refSlot,
+  lines,
+  annotations,
+  ref,
+}: {
+  band: { o: number; lo: number; hi: number; mean: number }[];
+  slots: Slot[];
+  refSlot?: Slot | undefined;
+  lines: boolean;
+  annotations: boolean;
+  ref: React.Ref<SVGSVGElement>;
 }) {
-  const axis = "#374151", grid = "#e5e7eb";
+  const axis = "#374151",
+    grid = "#e5e7eb";
   const main = refSlot && slots.includes(refSlot) ? refSlot.file : undefined;
   const mc = refSlot?.color ?? "#1d4ed8";
   const kp = main ? keyParams(main) : null;
   const guides = kp
-    ? ([
-        ["EImin", "Omin", kp.eiMin, kp.oMin, 55],
-        ["EImax", "Omax", kp.eiMax, kp.oMax, 90],
-        ["EIhyper", "Ohyper", kp.eiHyper, kp.oHyper, 60],
-      ] as const).filter(([, , e, o]) => e != null && o != null)
+    ? (
+        [
+          ["EImin", "Omin", kp.eiMin, kp.oMin, 55],
+          ["EImax", "Omax", kp.eiMax, kp.oMax, 90],
+          ["EIhyper", "Ohyper", kp.eiHyper, kp.oHyper, 60],
+        ] as const
+      ).filter(([, , e, o]) => e != null && o != null)
     : [];
 
   return (
-    <svg ref={ref} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} className="min-w-[640px] w-full"
-      fontFamily="Arial, sans-serif" role="img" aria-label="Ektacytometry curve">
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={`0 0 ${W} ${H}`}
+      className="min-w-[640px] w-full"
+      fontFamily="Arial, sans-serif"
+      role="img"
+      aria-label="Ektacytometry curve"
+    >
       <rect width={W} height={H} fill="#ffffff" />
       {[100, 200, 300, 400, 500].map((o) => (
         <g key={o}>
           <line x1={sx(o)} x2={sx(o)} y1={sy(Y0)} y2={sy(Y1)} stroke={grid} />
-          <text x={sx(o)} y={sy(Y0) + 18} fontSize="12" textAnchor="middle" fill={axis}>{o}</text>
+          <text x={sx(o)} y={sy(Y0) + 18} fontSize="12" textAnchor="middle" fill={axis}>
+            {o}
+          </text>
         </g>
       ))}
       {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6].map((e) => (
         <g key={e}>
           <line x1={sx(X0)} x2={sx(X1)} y1={sy(e)} y2={sy(e)} stroke={grid} />
-          <text x={sx(X0) - 8} y={sy(e) + 4} fontSize="12" textAnchor="end" fill={axis}>{e.toFixed(1)}</text>
+          <text x={sx(X0) - 8} y={sy(e) + 4} fontSize="12" textAnchor="end" fill={axis}>
+            {e.toFixed(1)}
+          </text>
         </g>
       ))}
       <line x1={sx(X0)} x2={sx(X1)} y1={sy(Y0)} y2={sy(Y0)} stroke={axis} />
       <line x1={sx(X0)} x2={sx(X0)} y1={sy(Y0)} y2={sy(Y1)} stroke={axis} />
-      <text x={(sx(X0) + sx(X1)) / 2} y={H - 12} fontSize="13" textAnchor="middle" fill={axis}>Osmolality (mOsm/kg)</text>
-      <text transform={`translate(18 ${(sy(Y0) + sy(Y1)) / 2}) rotate(-90)`} fontSize="13" textAnchor="middle" fill={axis}>Elongation Index (EI)</text>
+      <text x={(sx(X0) + sx(X1)) / 2} y={H - 12} fontSize="13" textAnchor="middle" fill={axis}>
+        Osmolality (mOsm/kg)
+      </text>
+      <text
+        transform={`translate(18 ${(sy(Y0) + sy(Y1)) / 2}) rotate(-90)`}
+        fontSize="13"
+        textAnchor="middle"
+        fill={axis}
+      >
+        Elongation Index (EI)
+      </text>
 
-      <clipPath id="plot-area"><rect x={sx(X0)} y={sy(Y1)} width={sx(X1) - sx(X0)} height={sy(Y0) - sy(Y1)} /></clipPath>
+      <clipPath id="plot-area">
+        <rect x={sx(X0)} y={sy(Y1)} width={sx(X1) - sx(X0)} height={sy(Y0) - sy(Y1)} />
+      </clipPath>
       <g clipPath="url(#plot-area)">
-        {band.length > 1 && (<>
-          <polygon fill="#9ca3af" fillOpacity="0.3" stroke="none"
-            points={[...band.map((b) => `${sx(b.o)},${sy(b.hi)}`), ...[...band].reverse().map((b) => `${sx(b.o)},${sy(b.lo)}`)].join(" ")} />
-          <polyline fill="none" stroke="#6b7280" strokeDasharray="4 3" strokeWidth="1"
-            points={band.map((b) => `${sx(b.o)},${sy(b.mean)}`).join(" ")} />
-        </>)}
+        {band.length > 1 && (
+          <>
+            <polygon
+              fill="#9ca3af"
+              fillOpacity="0.3"
+              stroke="none"
+              points={[
+                ...band.map((b) => `${sx(b.o)},${sy(b.hi)}`),
+                ...[...band].reverse().map((b) => `${sx(b.o)},${sy(b.lo)}`),
+              ].join(" ")}
+            />
+            <polyline
+              fill="none"
+              stroke="#6b7280"
+              strokeDasharray="4 3"
+              strokeWidth="1"
+              points={band.map((b) => `${sx(b.o)},${sy(b.mean)}`).join(" ")}
+            />
+          </>
+        )}
         {slots.map((s) => (
-          <polyline key={s.id} fill="none" stroke={s.color} strokeWidth="2"
-            points={s.file.points.map((p) => `${sx(p.o)},${sy(p.ei)}`).join(" ")} />
+          <polyline
+            key={s.id}
+            fill="none"
+            stroke={s.color}
+            strokeWidth="2"
+            points={s.file.points.map((p) => `${sx(p.o)},${sy(p.ei)}`).join(" ")}
+          />
         ))}
-        {lines && guides.map(([k, , e, o]) => (
-          <path key={k} d={`M${sx(X0)},${sy(e!)} H${sx(o!)} V${sy(Y0)}`} fill="none" stroke={mc} strokeDasharray="3 3" strokeWidth="1" />
-        ))}
+        {lines &&
+          guides.map(([k, , e, o]) => (
+            <path
+              key={k}
+              d={`M${sx(X0)},${sy(e!)} H${sx(o!)} V${sy(Y0)}`}
+              fill="none"
+              stroke={mc}
+              strokeDasharray="3 3"
+              strokeWidth="1"
+            />
+          ))}
       </g>
 
       {annotations && kp && (
@@ -450,12 +817,18 @@ function Chart({ band, slots, refSlot, lines, annotations, ref }: {
           {guides.map(([ek, ok, e, o, dx]) => (
             <g key={ek}>
               <circle cx={sx(o!)} cy={sy(e!)} r="3" fill={mc} />
-              <text x={sx(o!) + dx * 0.4} y={sy(e!) - 6}>{ek} = {e}</text>
-              <text x={sx(o!) + 4} y={sy(e!) + 16}>{ok} = {o}</text>
+              <text x={sx(o!) + dx * 0.4} y={sy(e!) - 6}>
+                {ek} = {e}
+              </text>
+              <text x={sx(o!) + 4} y={sy(e!) + 16}>
+                {ok} = {o}
+              </text>
             </g>
           ))}
           {kp.area != null && kp.oMax != null && kp.eiMax != null && (
-            <text x={sx(kp.oMax)} y={sy(kp.eiMax * 0.4)} textAnchor="middle">Area = {kp.area}</text>
+            <text x={sx(kp.oMax)} y={sy(kp.eiMax * 0.4)} textAnchor="middle">
+              Area = {kp.area}
+            </text>
           )}
         </g>
       )}
@@ -463,13 +836,17 @@ function Chart({ band, slots, refSlot, lines, annotations, ref }: {
       {slots.map((s, i) => (
         <g key={s.id} transform={`translate(${W - M.r + 16} ${M.t + 10 + i * 22})`}>
           <line x1="0" x2="22" y1="0" y2="0" stroke={s.color} strokeWidth="2.5" />
-          <text x="28" y="4" fontSize="12" fill={axis}>{s.legend || `File ${i + 1}`}</text>
+          <text x="28" y="4" fontSize="12" fill={axis}>
+            {s.legend || `File ${i + 1}`}
+          </text>
         </g>
       ))}
       {band.length > 1 && (
         <g transform={`translate(${W - M.r + 16} ${M.t + 10 + slots.length * 22})`}>
           <rect x="0" y="-6" width="22" height="12" fill="#9ca3af" fillOpacity="0.3" />
-          <text x="28" y="4" fontSize="12" fill={axis}>Normal ± 2 SD</text>
+          <text x="28" y="4" fontSize="12" fill={axis}>
+            Normal ± 2 SD
+          </text>
         </g>
       )}
     </svg>
@@ -481,19 +858,42 @@ function InfoTables({ slots }: { slots: Slot[] }) {
     <div className="space-y-6">
       {slots.map((s) => (
         <div key={s.id} className="space-y-2">
-          <h2 className="font-semibold" style={{ color: s.color }}>{s.file.sampleName}</h2>
+          <h2 className="font-semibold" style={{ color: s.color }}>
+            {s.file.sampleName}
+          </h2>
           <div className="overflow-x-auto">
             <table className="text-sm">
-              <thead><tr>{s.file.params.map((p) => <th key={p.parameter} className="border-b px-3 py-1 text-left font-medium">{p.parameter}</th>)}</tr></thead>
-              <tbody><tr>{s.file.params.map((p) => <td key={p.parameter} className="px-3 py-1 tabular-nums">{p.value ?? "—"}</td>)}</tr></tbody>
+              <thead>
+                <tr>
+                  {s.file.params.map((p) => (
+                    <th key={p.parameter} className="border-b px-3 py-1 text-left font-medium">
+                      {p.parameter}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {s.file.params.map((p) => (
+                    <td key={p.parameter} className="px-3 py-1 tabular-nums">
+                      {p.value ?? "—"}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
             </table>
           </div>
           <details className="text-xs text-muted-foreground">
             <summary className="cursor-pointer">All file metadata</summary>
             <table className="mt-2">
-              <tbody>{s.file.info.map((r, j) => (
-                <tr key={j}><td className="pr-4">{r.parameter}</td><td>{r.value}</td></tr>
-              ))}</tbody>
+              <tbody>
+                {s.file.info.map((r, j) => (
+                  <tr key={j}>
+                    <td className="pr-4">{r.parameter}</td>
+                    <td>{r.value}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </details>
         </div>
@@ -509,12 +909,24 @@ function ValueTables({ slots }: { slots: Slot[] }) {
         <div key={s.id} className="max-h-[480px] overflow-auto rounded border">
           <table className="w-full text-sm tabular-nums">
             <thead className="sticky top-0 bg-card">
-              <tr><th colSpan={2} className="px-2 py-1 text-left" style={{ color: s.color }}>{s.legend}</th></tr>
-              <tr><th className="px-2 text-left font-medium">O</th><th className="px-2 text-left font-medium">EI</th></tr>
+              <tr>
+                <th colSpan={2} className="px-2 py-1 text-left" style={{ color: s.color }}>
+                  {s.legend}
+                </th>
+              </tr>
+              <tr>
+                <th className="px-2 text-left font-medium">O</th>
+                <th className="px-2 text-left font-medium">EI</th>
+              </tr>
             </thead>
-            <tbody>{s.file.points.map((p, j) => (
-              <tr key={j} className="border-t"><td className="px-2">{p.o}</td><td className="px-2">{p.ei}</td></tr>
-            ))}</tbody>
+            <tbody>
+              {s.file.points.map((p, j) => (
+                <tr key={j} className="border-t">
+                  <td className="px-2">{p.o}</td>
+                  <td className="px-2">{p.ei}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       ))}

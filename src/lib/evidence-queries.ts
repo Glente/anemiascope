@@ -1,19 +1,23 @@
 import { queryOptions } from "@tanstack/react-query";
-import { fetchAlphaFold, fetchClinVar, fetchOmim, fetchTranscript, fetchUniProt } from "./evidence.functions";
+import {
+  fetchAlphaFold,
+  fetchClinVar,
+  fetchOmim,
+  fetchTranscript,
+  fetchUniProt,
+} from "./evidence.functions";
 
 export const uniProtQuery = (accession: string, residue?: number) =>
   queryOptions({
     queryKey: ["uniprot", accession, residue ?? null],
-    queryFn: () =>
-      fetchUniProt({ data: residue ? { accession, residue } : { accession } }),
+    queryFn: () => fetchUniProt({ data: residue ? { accession, residue } : { accession } }),
     staleTime: 1000 * 60 * 60,
   });
 
 export const alphaFoldQuery = (accession: string, residue?: number) =>
   queryOptions({
     queryKey: ["alphafold", accession, residue ?? null],
-    queryFn: () =>
-      fetchAlphaFold({ data: residue ? { accession, residue } : { accession } }),
+    queryFn: () => fetchAlphaFold({ data: residue ? { accession, residue } : { accession } }),
     staleTime: 1000 * 60 * 60,
   });
 
@@ -47,8 +51,7 @@ export const links = {
     )}`,
   gnomad: (gene: string) => `https://gnomad.broadinstitute.org/gene/${gene}?dataset=gnomad_r4`,
   omim: (mim: string) => `https://omim.org/entry/${mim}`,
-  orphanet: (code: string) =>
-    `https://www.orpha.net/en/disease/detail/${code}`,
+  orphanet: (code: string) => `https://www.orpha.net/en/disease/detail/${code}`,
   varsome: (gene: string, variant: string) =>
     `https://varsome.com/variant/hg38/${encodeURIComponent(`${gene} ${variant}`)}`,
 };

@@ -29,7 +29,9 @@ function parseWith(text: string, fmt: CsvFormat, fileName: string): OsmoscanFile
   const h = lines.findIndex((l) => l.includes("#"));
   if (h < 0) return null;
   const header = splitLine(lines[h]!, fmt).map((c) => c.replace(/#/g, "").trim());
-  const oIdx = header.findIndex((c) => /^o\.?$/i.test(c) || /^o[\s(.]/i.test(c) || /osmol/i.test(c));
+  const oIdx = header.findIndex(
+    (c) => /^o\.?$/i.test(c) || /^o[\s(.]/i.test(c) || /osmol/i.test(c),
+  );
   const eiIdx = header.findIndex((c) => /^ei\b/i.test(c));
   if (oIdx < 0 || eiIdx < 0) return null;
 
@@ -86,7 +88,12 @@ export function parseOsmoscan(text: string, fileName: string) {
 export function keyParams(f: OsmoscanFile) {
   const v = f.params.map((p) => p.value);
   return {
-    eiMin: v[0], oMin: v[1], eiMax: v[2], oMax: v[3],
-    eiHyper: v[4], oHyper: v[5], area: v[6],
+    eiMin: v[0],
+    oMin: v[1],
+    eiMax: v[2],
+    oMax: v[3],
+    eiHyper: v[4],
+    oHyper: v[5],
+    area: v[6],
   };
 }

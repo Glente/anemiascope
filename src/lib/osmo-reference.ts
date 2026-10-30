@@ -26,7 +26,8 @@ export function saveReferences(refs: OsmoscanFile[]) {
 function interp(points: { o: number; ei: number }[], o: number) {
   if (!points.length || o < points[0]!.o || o > points[points.length - 1]!.o) return null;
   for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1]!, b = points[i]!;
+    const a = points[i - 1]!,
+      b = points[i]!;
     if (o <= b.o) return b.o === a.o ? a.ei : a.ei + ((o - a.o) / (b.o - a.o)) * (b.ei - a.ei);
   }
   return null;

@@ -18,9 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Dna className="h-4.5 w-4.5" />
             </span>
-            <span className="truncate font-semibold tracking-tight">
-              Anemiascope
-            </span>
+            <span className="truncate font-semibold tracking-tight">Anemiascope</span>
           </Link>
           <nav className="col-span-2 grid grid-cols-3 gap-1 sm:col-span-1 sm:flex sm:items-center">
             {NAV.map(({ to, label, icon: Icon }) => (
@@ -31,8 +29,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 activeProps={{ className: "bg-accent text-foreground font-medium" }}
                 activeOptions={{ exact: to === "/" }}
               >
-                 <Icon className="h-4 w-4 shrink-0" />
-                 <span className="truncate">{label}</span>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{label}</span>
               </Link>
             ))}
           </nav>
@@ -44,8 +42,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto max-w-7xl px-3 py-4 sm:px-5 sm:py-6">{children}</main>
       <footer className="mx-auto max-w-7xl px-3 pb-8 pt-4 text-xs text-muted-foreground sm:px-5 sm:pb-10">
-        Research and discussion support only — not a diagnostic device. Curated gene
-        facts should be verified against the linked primary sources before clinical use.
+        Research and discussion support only — not a diagnostic device. Curated gene facts should be
+        verified against the linked primary sources before clinical use.
       </footer>
     </div>
   );

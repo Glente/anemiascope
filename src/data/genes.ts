@@ -15,16 +15,35 @@ export type G6pdClassification = {
 };
 
 export const G6PD_WHO_CLASSES: Record<G6pdWhoClass, { title: string; criteria: string }> = {
-  A: { title: "Class A", criteria: "Median activity < 20 % with chronic non-spherocytic hemolytic anemia (CNSHA)." },
-  B: { title: "Class B", criteria: "Median activity < 45 %; acute hemolysis triggered by oxidants, fava beans or infection." },
+  A: {
+    title: "Class A",
+    criteria: "Median activity < 20 % with chronic non-spherocytic hemolytic anemia (CNSHA).",
+  },
+  B: {
+    title: "Class B",
+    criteria:
+      "Median activity < 45 %; acute hemolysis triggered by oxidants, fava beans or infection.",
+  },
   C: { title: "Class C", criteria: "Median activity 60–150 %; no hemolysis." },
   U: { title: "Class U", criteria: "Any activity; uncertain clinical significance." },
 };
 
-export const G6PD_HISTORICAL_CLASSES: Record<G6pdHistoricalClass, { title: string; criteria: string }> = {
-  I: { title: "Class I", criteria: "Severe deficiency with chronic non-spherocytic hemolytic anemia." },
-  II: { title: "Class II", criteria: "Severe deficiency, < 10 % activity; intermittent acute hemolysis." },
-  III: { title: "Class III", criteria: "Moderate deficiency, 10–60 % activity; hemolysis with stressors." },
+export const G6PD_HISTORICAL_CLASSES: Record<
+  G6pdHistoricalClass,
+  { title: string; criteria: string }
+> = {
+  I: {
+    title: "Class I",
+    criteria: "Severe deficiency with chronic non-spherocytic hemolytic anemia.",
+  },
+  II: {
+    title: "Class II",
+    criteria: "Severe deficiency, < 10 % activity; intermittent acute hemolysis.",
+  },
+  III: {
+    title: "Class III",
+    criteria: "Moderate deficiency, 10–60 % activity; hemolysis with stressors.",
+  },
   IV: { title: "Class IV", criteria: "Normal activity, 60–150 %." },
   V: { title: "Class V", criteria: "Increased activity, > 150 %." },
 };
@@ -170,9 +189,7 @@ const CURATED: Gene[] = [
     summary:
       "Band 4.2 stabilises the band 3-ankyrin complex. Deficiency causes recessive spherocytosis, frequent in Japanese cohorts.",
     transcript: "NM_000119.3",
-    presets: [
-      { label: "Band 4.2 Nippon", protein: "p.Ala142Thr", cdna: "c.424G>A", residue: 142 },
-    ],
+    presets: [{ label: "Band 4.2 Nippon", protein: "p.Ala142Thr", cdna: "c.424G>A", residue: 142 }],
   },
   {
     symbol: "PIEZO1",
@@ -238,9 +255,27 @@ const CURATED: Gene[] = [
         residue: 126,
         g6pd: { who: "C", historical: "IV", activity: "60–150 %" },
       },
-      { label: "G6PD Canton", protein: "p.Arg459Leu", cdna: "c.1376G>T", residue: 459, g6pd: { who: "B", historical: "II" } },
-      { label: "G6PD Kaiping", protein: "p.Arg463His", cdna: "c.1388G>A", residue: 463, g6pd: { who: "B", historical: "II" } },
-      { label: "G6PD Union", protein: "p.Arg454Cys", cdna: "c.1360C>T", residue: 454, g6pd: { who: "B", historical: "II" } },
+      {
+        label: "G6PD Canton",
+        protein: "p.Arg459Leu",
+        cdna: "c.1376G>T",
+        residue: 459,
+        g6pd: { who: "B", historical: "II" },
+      },
+      {
+        label: "G6PD Kaiping",
+        protein: "p.Arg463His",
+        cdna: "c.1388G>A",
+        residue: 463,
+        g6pd: { who: "B", historical: "II" },
+      },
+      {
+        label: "G6PD Union",
+        protein: "p.Arg454Cys",
+        cdna: "c.1360C>T",
+        residue: 454,
+        g6pd: { who: "B", historical: "II" },
+      },
     ],
   },
   {
@@ -340,7 +375,8 @@ const CURATED: Gene[] = [
     phenotypeMim: [{ mim: "611881", name: "Aldolase A deficiency" }],
     orpha: [{ code: "57", name: "Aldolase A deficiency" }],
     inheritance: "Autosomal recessive",
-    summary: "Glycolytic aldolase; deficiency causes hemolytic anemia often with myopathy and rhabdomyolysis during fever.",
+    summary:
+      "Glycolytic aldolase; deficiency causes hemolytic anemia often with myopathy and rhabdomyolysis during fever.",
     transcript: "NM_000034.4",
     presets: [],
   },

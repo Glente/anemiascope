@@ -64,8 +64,10 @@ export function buildProvenance(args: {
             {
               field: "features covering residue",
               value:
-                uniprot?.features.filter((f) => f.covers).map((f) => `${f.type} ${f.start}–${f.end}`).join("; ") ||
-                "none",
+                uniprot?.features
+                  .filter((f) => f.covers)
+                  .map((f) => `${f.type} ${f.start}–${f.end}`)
+                  .join("; ") || "none",
               usedIn: both,
             },
             {
@@ -126,7 +128,8 @@ export function buildProvenance(args: {
     viewUrl: gene.mim ? links.omim(gene.mim) : "https://omim.org",
     retrievedAt: omim?.provenance?.retrievedAt ?? null,
     recordVersion:
-      omim?.provenance?.recordVersion ?? (omim?.configured === false ? "no API key — curated MIM numbers only" : null),
+      omim?.provenance?.recordVersion ??
+      (omim?.configured === false ? "no API key — curated MIM numbers only" : null),
     fields: [
       { field: "gene MIM (curated)", value: gene.mim ?? "—", usedIn: both },
       {
@@ -134,7 +137,9 @@ export function buildProvenance(args: {
         value: (gene.phenotypeMim ?? []).map((p) => `${p.mim} ${p.name}`).join("; ") || "—",
         usedIn: both,
       },
-      ...(omim?.summary ? [{ field: "text:description", value: `${omim.summary.slice(0, 120)}…`, usedIn: ev }] : []),
+      ...(omim?.summary
+        ? [{ field: "text:description", value: `${omim.summary.slice(0, 120)}…`, usedIn: ev }]
+        : []),
     ],
   });
 

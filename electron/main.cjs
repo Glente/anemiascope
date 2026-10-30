@@ -19,7 +19,10 @@ function createWindow() {
     return { action: url.startsWith(APP_ORIGIN) ? "allow" : "deny" };
   });
   win.webContents.on("will-navigate", (e, url) => {
-    if (!url.startsWith(APP_ORIGIN)) { e.preventDefault(); shell.openExternal(url); }
+    if (!url.startsWith(APP_ORIGIN)) {
+      e.preventDefault();
+      shell.openExternal(url);
+    }
   });
   win.loadURL(APP_URL);
 }

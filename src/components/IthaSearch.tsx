@@ -8,7 +8,13 @@ import { listIthaIndex } from "@/lib/globin.functions";
 import { readIthaIndexCache, writeIthaIndexCache } from "@/lib/itha-index-cache";
 
 const norm = (s: string) =>
-  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/^hb\s*/, "").replace(/\s+/g, " ").trim();
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/^hb\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 type Props = { loading: boolean; loadedId: string; onLoad: (id: string) => void };
 
@@ -103,12 +109,21 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {
-            if (e.key === "ArrowDown") { e.preventDefault(); setActive((i) => Math.min(i + 1, results.length - 1)); }
-            else if (e.key === "ArrowUp") { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); }
-            else if (e.key === "Escape") setOpen(false);
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setActive((i) => Math.min(i + 1, results.length - 1));
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setActive((i) => Math.max(i - 1, 0));
+            } else if (e.key === "Escape") setOpen(false);
           }}
         />
-        <Button type="submit" variant="outline" disabled={!q.trim() || loading} className="w-full sm:w-auto">
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={!q.trim() || loading}
+          className="w-full sm:w-auto"
+        >
           {loading ? "Loading…" : "Load"}
         </Button>
         {open && !isNumber && q.trim().length >= 2 && (
@@ -116,7 +131,9 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
             {!cacheChecked || index.isLoading ? (
               <p className="px-2 py-3 text-xs text-muted-foreground">Preparing ITHANET names…</p>
             ) : results.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground">No ITHANET entry named “{q}”.</p>
+              <p className="px-2 py-3 text-xs text-muted-foreground">
+                No ITHANET entry named “{q}”.
+              </p>
             ) : (
               results.map((r, i) => (
                 <button
@@ -127,7 +144,10 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
                   onClick={() => pick(r.ithaId)}
                 >
                   <span className="font-medium">
-                    {r.hbName || r.commonName} <span className="text-xs text-muted-foreground">· IthaID {r.ithaId} · {r.gene}</span>
+                    {r.hbName || r.commonName}{" "}
+                    <span className="text-xs text-muted-foreground">
+                      · IthaID {r.ithaId} · {r.gene}
+                    </span>
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {[r.hbName ? r.commonName : "", r.hgvsName].filter(Boolean).join(" · ")}
@@ -139,7 +159,11 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
         )}
       </div>
       {q.trim().length >= 2 && !isNumber && (!cacheChecked || index.isLoading) && (
-        <div className="space-y-2 rounded-md border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground" role="status" aria-live="polite">
+        <div
+          className="space-y-2 rounded-md border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
           <span className="flex items-center gap-2 font-medium text-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
             Fetching the ITHANET name list…
@@ -153,7 +177,8 @@ export function IthaSearch({ loading, loadedId, onLoad }: Props) {
       {cacheSource && index.data && q.trim().length >= 2 && !index.isLoading && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
           <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-          {index.data.length.toLocaleString()} names ready · {cacheSource === "stored" ? "loaded from saved copy" : "saved for faster repeat searches"}
+          {index.data.length.toLocaleString()} names ready ·{" "}
+          {cacheSource === "stored" ? "loaded from saved copy" : "saved for faster repeat searches"}
         </p>
       )}
       {loadedId && <p className="text-xs text-muted-foreground">Loaded from IthaID {loadedId}</p>}

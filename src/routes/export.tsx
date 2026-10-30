@@ -9,13 +9,7 @@ import { ProvenancePanel } from "@/components/ProvenancePanel";
 import { buildProvenance } from "@/lib/provenance";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GENES, getGene } from "@/data/genes";
 import { caseStore, LAB_FIELDS, useCase } from "@/lib/case-store";
 import { alphaFoldQuery, clinVarQuery, omimQuery, uniProtQuery } from "@/lib/evidence-queries";
@@ -56,8 +50,13 @@ function ExportPage() {
   const primaryMim = gene.phenotypeMim?.[0]?.mim ?? gene.mim;
   const omim = useQuery({ ...omimQuery(primaryMim ?? ""), enabled: Boolean(primaryMim) });
   const provenance = buildProvenance({
-    gene, state, parsed,
-    uniprot: uniprot.data, alphafold: alphafold.data, clinvar: clinvar.data, omim: omim.data,
+    gene,
+    state,
+    parsed,
+    uniprot: uniprot.data,
+    alphafold: alphafold.data,
+    clinvar: clinvar.data,
+    omim: omim.data,
   });
 
   const filledLabs = LAB_FIELDS.filter((f) => (state.labs[f.key] ?? "").trim() !== "");
@@ -187,9 +186,7 @@ function ExportPage() {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid gap-1 border-b border-border/60 pb-2 last:border-0 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center sm:gap-x-3">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
       <span className="flex min-w-0 flex-wrap items-center gap-2 break-words">{children}</span>
     </div>
   );

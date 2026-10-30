@@ -37,9 +37,26 @@ export type UniProtInfo = {
 };
 
 const RESIDUE_LETTERS: Record<string, string> = {
-  A: "Ala", R: "Arg", N: "Asn", D: "Asp", C: "Cys", Q: "Gln", E: "Glu", G: "Gly",
-  H: "His", I: "Ile", L: "Leu", K: "Lys", M: "Met", F: "Phe", P: "Pro", S: "Ser",
-  T: "Thr", W: "Trp", Y: "Tyr", V: "Val",
+  A: "Ala",
+  R: "Arg",
+  N: "Asn",
+  D: "Asp",
+  C: "Cys",
+  Q: "Gln",
+  E: "Glu",
+  G: "Gly",
+  H: "His",
+  I: "Ile",
+  L: "Leu",
+  K: "Lys",
+  M: "Met",
+  F: "Phe",
+  P: "Pro",
+  S: "Ser",
+  T: "Thr",
+  W: "Trp",
+  Y: "Tyr",
+  V: "Val",
 };
 
 export const threeLetter = (aa: string) => RESIDUE_LETTERS[aa] ?? aa;
@@ -83,7 +100,11 @@ export const fetchUniProt = createServerFn({ method: "GET" })
           if (residue && residue >= start && residue <= end) {
             variantsAt.push({
               description: String(f.description ?? "").slice(0, 300),
-              alt: [f?.alternativeSequence?.originalSequence, "->", f?.alternativeSequence?.alternativeSequences?.[0]]
+              alt: [
+                f?.alternativeSequence?.originalSequence,
+                "->",
+                f?.alternativeSequence?.alternativeSequences?.[0],
+              ]
                 .filter(Boolean)
                 .join(" "),
             });
@@ -106,12 +127,17 @@ export const fetchUniProt = createServerFn({ method: "GET" })
         audit.entryVersion ? `entry v${audit.entryVersion}` : null,
         audit.sequenceVersion ? `sequence v${audit.sequenceVersion}` : null,
         audit.lastAnnotationUpdateDate ? `updated ${audit.lastAnnotationUpdateDate}` : null,
-      ].filter(Boolean).join(" · ");
+      ]
+        .filter(Boolean)
+        .join(" · ");
       const functionComment = (json["comments"] ?? []).find(
         (c: any) => c?.commentType === "FUNCTION",
       );
       const functionText: string | null =
-        functionComment?.texts?.map((t: any) => String(t?.value ?? "")).join(" ").trim() || null;
+        functionComment?.texts
+          ?.map((t: any) => String(t?.value ?? ""))
+          .join(" ")
+          .trim() || null;
       return {
         provenance: prov(url, version || null),
         accession: json["primaryAccession"] ?? data.accession,
@@ -166,10 +192,22 @@ export const fetchAlphaFold = createServerFn({ method: "GET" })
           "user-agent": "AnemiaVariantBoard/1.0 (clinical research tool)",
         },
       });
-      if (!res.ok) return { accession: data.accession, provenance: prov(url), available: false, error: `AlphaFold returned ${res.status}` };
+      if (!res.ok)
+        return {
+          accession: data.accession,
+          provenance: prov(url),
+          available: false,
+          error: `AlphaFold returned ${res.status}`,
+        };
       const arr = (await res.json()) as any[];
       const entry = arr?.[0];
-      if (!entry) return { accession: data.accession, provenance: prov(url), available: false, error: "No AlphaFold model found" };
+      if (!entry)
+        return {
+          accession: data.accession,
+          provenance: prov(url),
+          available: false,
+          error: "No AlphaFold model found",
+        };
 
       let plddt: number | null = null;
       if (data.residue && entry.pdbUrl) {
@@ -193,8 +231,13 @@ export const fetchAlphaFold = createServerFn({ method: "GET" })
       return {
         provenance: prov(
           data.residue && entry.pdbUrl ? `${url} ; pLDDT from ${entry.pdbUrl}` : url,
-          [entry.entryId, entry.latestVersion ? `model v${entry.latestVersion}` : null, entry.modelCreatedDate ? `created ${entry.modelCreatedDate.slice(0, 10)}` : null]
-            .filter(Boolean).join(" · ") || null,
+          [
+            entry.entryId,
+            entry.latestVersion ? `model v${entry.latestVersion}` : null,
+            entry.modelCreatedDate ? `created ${entry.modelCreatedDate.slice(0, 10)}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null,
         ),
         accession: data.accession,
         available: true,
@@ -233,7 +276,9 @@ export type ClinVarResult = {
 
 export const fetchClinVar = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) =>
-    z.object({ gene: z.string().min(1).max(20), variant: z.string().max(120).optional() }).parse(input),
+    z
+      .object({ gene: z.string().min(1).max(20), variant: z.string().max(120).optional() })
+      .parse(input),
   )
   .handler(async ({ data }): Promise<ClinVarResult> => {
     const term = data.variant
@@ -242,16 +287,19 @@ export const fetchClinVar = createServerFn({ method: "GET" })
     try {
       const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&retmode=json&retmax=8&term=${encodeURIComponent(term)}`;
       const esearch = await fetch(esearchUrl);
-      if (!esearch.ok) return { query: term, total: 0, hits: [], error: `ClinVar returned ${esearch.status}` };
+      if (!esearch.ok)
+        return { query: term, total: 0, hits: [], error: `ClinVar returned ${esearch.status}` };
       const sj = (await esearch.json()) as any;
       const ids: string[] = sj?.esearchresult?.idlist ?? [];
       const total = Number(sj?.esearchresult?.count ?? 0);
-      if (!ids.length) return { query: term, total, hits: [], provenance: prov(esearchUrl, "no records matched") };
+      if (!ids.length)
+        return { query: term, total, hits: [], provenance: prov(esearchUrl, "no records matched") };
 
       const esum = await fetch(
         `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&retmode=json&id=${ids.join(",")}`,
       );
-      if (!esum.ok) return { query: term, total, hits: [], error: `ClinVar summary returned ${esum.status}` };
+      if (!esum.ok)
+        return { query: term, total, hits: [], error: `ClinVar summary returned ${esum.status}` };
       const ej = (await esum.json()) as any;
       const hits: ClinVarHit[] = ids
         .map((id) => ej?.result?.[id])
@@ -260,9 +308,21 @@ export const fetchClinVar = createServerFn({ method: "GET" })
           uid: String(r.uid ?? r.accession ?? ""),
           accession: String(r.accession_version ?? r.accession ?? ""),
           title: String(r.title ?? ""),
-          significance: String(r.germline_classification?.description ?? r.clinical_significance?.description ?? "Not provided"),
-          reviewStatus: String(r.germline_classification?.review_status ?? r.clinical_significance?.review_status ?? ""),
-          lastEvaluated: String(r.germline_classification?.last_evaluated ?? r.clinical_significance?.last_evaluated ?? ""),
+          significance: String(
+            r.germline_classification?.description ??
+              r.clinical_significance?.description ??
+              "Not provided",
+          ),
+          reviewStatus: String(
+            r.germline_classification?.review_status ??
+              r.clinical_significance?.review_status ??
+              "",
+          ),
+          lastEvaluated: String(
+            r.germline_classification?.last_evaluated ??
+              r.clinical_significance?.last_evaluated ??
+              "",
+          ),
           conditions: ((r.germline_classification?.trait_set ?? r.trait_set ?? []) as any[])
             .map((t) => t?.trait_name)
             .filter(Boolean)
@@ -275,11 +335,20 @@ export const fetchClinVar = createServerFn({ method: "GET" })
         hits,
         provenance: prov(
           `${esearchUrl} ; ${esumUrl}`,
-          hits.map((h) => h.accession).filter(Boolean).slice(0, 4).join(", ") || null,
+          hits
+            .map((h) => h.accession)
+            .filter(Boolean)
+            .slice(0, 4)
+            .join(", ") || null,
         ),
       };
     } catch (e) {
-      return { query: term, total: 0, hits: [], error: e instanceof Error ? e.message : "ClinVar lookup failed" };
+      return {
+        query: term,
+        total: 0,
+        hits: [],
+        error: e instanceof Error ? e.message : "ClinVar lookup failed",
+      };
     }
   });
 
@@ -303,19 +372,29 @@ export const fetchOmim = createServerFn({ method: "GET" })
       if (!res.ok) return { mim: data.mim, configured: true, error: `OMIM returned ${res.status}` };
       const json = (await res.json()) as any;
       const entry = json?.omim?.entryList?.[0]?.entry;
-      const text = entry?.textSectionList?.[0]?.textSection?.textSectionContent as string | undefined;
+      const text = entry?.textSectionList?.[0]?.textSection?.textSectionContent as
+        string | undefined;
       return {
         mim: data.mim,
         configured: true,
         provenance: prov(
           `${publicUrl} (API key redacted)`,
-          [entry?.version ? `v${entry.version}` : null, entry?.dateUpdated ? `updated ${entry.dateUpdated}` : null].filter(Boolean).join(" · ") || null,
+          [
+            entry?.version ? `v${entry.version}` : null,
+            entry?.dateUpdated ? `updated ${entry.dateUpdated}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null,
         ),
         title: entry?.titles?.preferredTitle,
         summary: text ? text.replace(/\{[^}]*\}/g, "").slice(0, 1600) : undefined,
       };
     } catch (e) {
-      return { mim: data.mim, configured: true, error: e instanceof Error ? e.message : "OMIM lookup failed" };
+      return {
+        mim: data.mim,
+        configured: true,
+        error: e instanceof Error ? e.message : "OMIM lookup failed",
+      };
     }
   });
 
@@ -340,25 +419,40 @@ export type TranscriptInfo = {
 };
 
 export const fetchTranscript = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => z.object({ gene: z.string().regex(/^[A-Z0-9-]{2,15}$/) }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ gene: z.string().regex(/^[A-Z0-9-]{2,15}$/) }).parse(input),
+  )
   .handler(async ({ data }): Promise<TranscriptInfo> => {
     const base: TranscriptInfo = {
-      gene: data.gene, transcriptId: "", chromosome: "", strand: 1, assembly: "", exons: [], cds: "",
+      gene: data.gene,
+      transcriptId: "",
+      chromosome: "",
+      strand: 1,
+      assembly: "",
+      exons: [],
+      cds: "",
     };
     const lookupUrl = `https://rest.ensembl.org/lookup/symbol/homo_sapiens/${data.gene}?expand=1`;
     try {
-      const res = await fetch(lookupUrl, { headers: { "content-type": "application/json", accept: "application/json" } });
+      const res = await fetch(lookupUrl, {
+        headers: { "content-type": "application/json", accept: "application/json" },
+      });
       if (!res.ok) return { ...base, error: `Ensembl returned ${res.status}` };
       const g = (await res.json()) as any;
       const tx = (g.Transcript ?? []).find((t: any) => t.is_canonical === 1) ?? g.Transcript?.[0];
       if (!tx?.Translation) return { ...base, error: "No coding transcript found" };
       const strand = Number(tx.strand);
-      const tStart = Number(tx.Translation.start), tEnd = Number(tx.Translation.end);
-      const exonsRaw = [...(tx.Exon ?? [])].sort((a: any, b: any) => (strand === 1 ? a.start - b.start : b.end - a.end));
+      const tStart = Number(tx.Translation.start),
+        tEnd = Number(tx.Translation.end);
+      const exonsRaw = [...(tx.Exon ?? [])].sort((a: any, b: any) =>
+        strand === 1 ? a.start - b.start : b.end - a.end,
+      );
       let acc = 0;
       const exons: TranscriptExon[] = exonsRaw.map((e: any, i: number) => {
-        const s = Math.max(e.start, tStart), en = Math.min(e.end, tEnd);
-        if (s > en) return { rank: i + 1, start: e.start, end: e.end, cdsStart: null, cdsEnd: null };
+        const s = Math.max(e.start, tStart),
+          en = Math.min(e.end, tEnd);
+        if (s > en)
+          return { rank: i + 1, start: e.start, end: e.end, cdsStart: null, cdsEnd: null };
         const len = en - s + 1;
         const r = { rank: i + 1, start: e.start, end: e.end, cdsStart: acc + 1, cdsEnd: acc + len };
         acc += len;
@@ -376,7 +470,10 @@ export const fetchTranscript = createServerFn({ method: "GET" })
         assembly: String(g.assembly_name ?? ""),
         exons,
         cds,
-        provenance: prov(`${lookupUrl} ; ${seqUrl}`, `${txId} (Ensembl canonical) · ${g.assembly_name ?? ""}`),
+        provenance: prov(
+          `${lookupUrl} ; ${seqUrl}`,
+          `${txId} (Ensembl canonical) · ${g.assembly_name ?? ""}`,
+        ),
         ...(sr.ok ? {} : { error: `CDS sequence returned ${sr.status}` }),
       };
     } catch (e) {

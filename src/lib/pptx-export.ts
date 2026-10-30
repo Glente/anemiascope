@@ -1,6 +1,6 @@
 import type { Gene } from "@/data/genes";
 import type { CaseState } from "@/lib/case-store";
-import { LAB_FIELDS } from "@/lib/case-store";
+import { flagLab, LAB_FIELDS } from "@/lib/case-store";
 import { links } from "@/lib/evidence-queries";
 import type { AlphaFoldInfo, ClinVarResult, UniProtInfo } from "@/lib/evidence.functions";
 import { fmtTime, type ProvRow } from "@/lib/provenance";
@@ -111,7 +111,14 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar, prov
           ],
           ...col.map((f) => [
             { text: f.label, options: { color: INK } },
-            { text: `${state.labs[f.key]} ${f.unit}`.trim(), options: { bold: true, color: OXBLOOD } },
+            (() => {
+              const flag = flagLab(f, state.labs[f.key] ?? "", state.sex);
+              const arrow = flag === "high" ? " ↑" : flag === "low" ? " ↓" : "";
+              return {
+                text: `${state.labs[f.key]} ${f.unit}`.trim() + arrow,
+                options: { bold: Boolean(flag), color: flag ? OXBLOOD : INK },
+              };
+            })(),
             { text: f.ref ?? "—", options: { color: SLATE } },
           ]),
         ],
@@ -121,7 +128,7 @@ export async function buildDeck({ state, gene, uniprot, alphafold, clinvar, prov
         },
       );
     });
-    s3.addText("Reference intervals are generic adult values — confirm against your own laboratory.", {
+    s3.addText("↑/↓ = outside generic adult reference interval — confirm against your own laboratory.", {
       x: 0.5, y: 5.0, w: 9.0, h: 0.3, fontFace: H.body, fontSize: 11, color: SLATE, italic: true,
     });
   }

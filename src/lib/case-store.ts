@@ -5,7 +5,18 @@ import { useSyncExternalStore } from "react";
  * localStorage — closing or reloading the tab clears everything.
  */
 
-export type LabValue = { key: string; label: string; unit: string; value: string; ref?: string };
+export type LabValue = {
+  key: string;
+  label: string;
+  unit: string;
+  value: string;
+  ref?: string;
+  /** Numeric limits used for H/L flagging. Sex-specific limits override when sex is known. */
+  low?: number;
+  high?: number;
+  lowF?: number;
+  highF?: number;
+};
 
 export type CaseState = {
   geneSymbol: string;
@@ -29,22 +40,78 @@ export type CaseState = {
 };
 
 export const LAB_FIELDS: LabValue[] = [
-  { key: "hb", label: "Hemoglobin", unit: "g/dL", value: "", ref: "13.5–17.5 (M) / 12.0–15.5 (F)" },
-  { key: "mcv", label: "MCV", unit: "fL", value: "", ref: "80–100" },
-  { key: "mchc", label: "MCHC", unit: "g/dL", value: "", ref: "32–36" },
-  { key: "rdw", label: "RDW", unit: "%", value: "", ref: "11.5–14.5" },
-  { key: "retics", label: "Reticulocytes", unit: "×10⁹/L", value: "", ref: "25–100" },
-  { key: "bili", label: "Bilirubin (total)", unit: "µmol/L", value: "", ref: "< 21" },
-  { key: "ldh", label: "LDH", unit: "U/L", value: "", ref: "120–250" },
-  { key: "hapto", label: "Haptoglobin", unit: "g/L", value: "", ref: "0.3–2.0" },
-  { key: "ferritin", label: "Ferritin", unit: "µg/L", value: "", ref: "30–300" },
-  { key: "tsat", label: "Transferrin saturation", unit: "%", value: "", ref: "20–45" },
+  {
+    key: "hb",
+    label: "Hemoglobin",
+    unit: "g/dL",
+    value: "",
+    ref: "13.5–17.5 (M) / 12.0–15.5 (F)",
+    low: 13.5,
+    high: 17.5,
+    lowF: 12.0,
+    highF: 15.5,
+  },
+  { key: "mcv", label: "MCV", unit: "fL", value: "", ref: "80–100", low: 80, high: 100 },
+  { key: "mchc", label: "MCHC", unit: "g/dL", value: "", ref: "32–36", low: 32, high: 36 },
+  { key: "rdw", label: "RDW", unit: "%", value: "", ref: "11.5–14.5", low: 11.5, high: 14.5 },
+  {
+    key: "retics",
+    label: "Reticulocytes",
+    unit: "×10⁹/L",
+    value: "",
+    ref: "25–100",
+    low: 25,
+    high: 100,
+  },
+  { key: "bili", label: "Bilirubin (total)", unit: "µmol/L", value: "", ref: "< 21", high: 21 },
+  { key: "ldh", label: "LDH", unit: "U/L", value: "", ref: "120–250", low: 120, high: 250 },
+  {
+    key: "hapto",
+    label: "Haptoglobin",
+    unit: "g/L",
+    value: "",
+    ref: "0.3–2.0",
+    low: 0.3,
+    high: 2.0,
+  },
+  {
+    key: "ferritin",
+    label: "Ferritin",
+    unit: "µg/L",
+    value: "",
+    ref: "30–300",
+    low: 30,
+    high: 300,
+  },
+  {
+    key: "tsat",
+    label: "Transferrin saturation",
+    unit: "%",
+    value: "",
+    ref: "20–45",
+    low: 20,
+    high: 45,
+  },
   { key: "dat", label: "DAT / Coombs", unit: "", value: "", ref: "Negative" },
-  { key: "ema", label: "EMA binding", unit: "% of control", value: "", ref: "> 80" },
+  { key: "ema", label: "EMA binding", unit: "% of control", value: "", ref: "> 80", low: 80 },
   { key: "ekta", label: "Osmotic gradient ektacytometry", unit: "", value: "" },
-  { key: "g6pd", label: "G6PD activity", unit: "U/g Hb", value: "", ref: "7–20" },
-  { key: "pk", label: "Pyruvate kinase activity", unit: "U/g Hb", value: "", ref: "9–22" },
-  { key: "hplc", label: "Hb fractions (HPLC)", unit: "", value: "", ref: "HbA2 2.0–3.3 %, HbF < 1 %" },
+  { key: "g6pd", label: "G6PD activity", unit: "U/g Hb", value: "", ref: "7–20", low: 7, high: 20 },
+  {
+    key: "pk",
+    label: "Pyruvate kinase activity",
+    unit: "U/g Hb",
+    value: "",
+    ref: "9–22",
+    low: 9,
+    high: 22,
+  },
+  {
+    key: "hplc",
+    label: "Hb fractions (HPLC)",
+    unit: "",
+    value: "",
+    ref: "HbA2 2.0–3.3 %, HbF < 1 %",
+  },
   { key: "spleen", label: "Spleen size (imaging)", unit: "cm", value: "" },
 ];
 
@@ -110,8 +177,45 @@ export function useCase(): CaseState {
 
 export function hasPatientData(s: CaseState): boolean {
   const text = [
-    s.caseLabel, s.ageBand, s.sex, s.ancestry, s.presentation,
-    s.transfusion, s.splenectomy, s.familyHistory, s.question,
+    s.caseLabel,
+    s.ageBand,
+    s.sex,
+    s.ancestry,
+    s.presentation,
+    s.transfusion,
+    s.splenectomy,
+    s.familyHistory,
+    s.question,
   ].some((v) => v.trim() !== "");
   return text || Object.values(s.labs).some((v) => v.trim() !== "");
+}
+
+export type LabFlag = "high" | "low" | null;
+
+/**
+ * Flags a lab value against the generic reference interval. Only plain numbers
+ * are flagged ("8.4", "8,4", "<0.1"); free text such as "positive" is left alone.
+ */
+export function flagLab(field: LabValue, value: string, sex: string): LabFlag {
+  const m = value
+    .trim()
+    .replace(",", ".")
+    .match(/^([<>]=?)?\s*(-?\d+(?:\.\d+)?)$/);
+  if (!m) return null;
+  const n = Number(m[2]);
+  const female = /^(f|k|female|kvinde|woman|w)$/i.test(sex.trim());
+  const male = /^(m|male|mand|man)$/i.test(sex.trim());
+  let low = field.low;
+  let high = field.high;
+  if (female) {
+    low = field.lowF ?? low;
+    high = field.highF ?? high;
+  } else if (!male && field.lowF != null) {
+    // Sex unknown: only flag outside the union of both intervals
+    low = Math.min(field.low ?? Infinity, field.lowF);
+    high = Math.max(field.high ?? -Infinity, field.highF ?? -Infinity);
+  }
+  if (low != null && n < low && m[1] !== ">" && m[1] !== ">=") return "low";
+  if (high != null && n > high && m[1] !== "<" && m[1] !== "<=") return "high";
+  return null;
 }

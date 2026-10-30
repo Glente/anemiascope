@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { caseStore, LAB_FIELDS, useCase } from "@/lib/case-store";
+import { caseStore, flagLab, LAB_FIELDS, useCase } from "@/lib/case-store";
 
 export const Route = createFileRoute("/patient")({
   head: () => ({
@@ -81,19 +81,32 @@ function PatientPage() {
             <CardDescription>Leave blank what you do not have — blanks are skipped on the slides</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
-            {LAB_FIELDS.map((f) => (
-              <div key={f.key} className="space-y-1.5">
-                <Label htmlFor={f.key} className="text-xs">
-                  {f.label} {f.unit && <span className="text-muted-foreground">({f.unit})</span>}
-                </Label>
-                <Input
-                  id={f.key}
-                  value={state.labs[f.key] ?? ""}
-                  onChange={(e) => caseStore.setLab(f.key, e.target.value)}
-                />
-                {f.ref && <p className="text-[11px] text-muted-foreground">Ref: {f.ref}</p>}
-              </div>
-            ))}
+            {LAB_FIELDS.map((f) => {
+              const flag = flagLab(f, state.labs[f.key] ?? "", state.sex);
+              return (
+                <div key={f.key} className="space-y-1.5">
+                  <Label htmlFor={f.key} className="flex items-center gap-1.5 text-xs">
+                    <span>
+                      {f.label} {f.unit && <span className="text-muted-foreground">({f.unit})</span>}
+                    </span>
+                    {flag && (
+                      <span className="rounded bg-destructive/10 px-1 text-[10px] font-semibold text-destructive">
+                        {flag === "high" ? "↑ High" : "↓ Low"}
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id={f.key}
+                    inputMode={f.low != null || f.high != null ? "decimal" : "text"}
+                    aria-invalid={flag ? true : undefined}
+                    className={flag ? "border-destructive/60" : undefined}
+                    value={state.labs[f.key] ?? ""}
+                    onChange={(e) => caseStore.setLab(f.key, e.target.value)}
+                  />
+                  {f.ref && <p className="text-[11px] text-muted-foreground">Ref: {f.ref}</p>}
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
 

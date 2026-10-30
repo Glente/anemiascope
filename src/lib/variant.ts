@@ -1,7 +1,26 @@
 const THREE_TO_ONE: Record<string, string> = {
-  Ala: "A", Arg: "R", Asn: "N", Asp: "D", Cys: "C", Gln: "Q", Glu: "E", Gly: "G",
-  His: "H", Ile: "I", Leu: "L", Lys: "K", Met: "M", Phe: "F", Pro: "P", Ser: "S",
-  Thr: "T", Trp: "W", Tyr: "Y", Val: "V", Ter: "*", Sec: "U",
+  Ala: "A",
+  Arg: "R",
+  Asn: "N",
+  Asp: "D",
+  Cys: "C",
+  Gln: "Q",
+  Glu: "E",
+  Gly: "G",
+  His: "H",
+  Ile: "I",
+  Leu: "L",
+  Lys: "K",
+  Met: "M",
+  Phe: "F",
+  Pro: "P",
+  Ser: "S",
+  Thr: "T",
+  Trp: "W",
+  Tyr: "Y",
+  Val: "V",
+  Ter: "*",
+  Sec: "U",
 };
 
 export const ONE_TO_THREE: Record<string, string> = Object.fromEntries(
@@ -35,31 +54,54 @@ export function parseVariant(input: string): ParsedVariant {
   const proteinChunk = raw.match(/p\.\(?[A-Za-z*]{1,3}\d+[A-Za-z*_>=]*[^\s()]*/);
   const proteinText = proteinChunk ? proteinChunk[0].replace(/^p\.\(?/, "") : raw;
 
-  // Frameshift / nonsense / deletion keywords
-  if (/fs/i.test(proteinText)) result.consequence = "Frameshift";
-  else if (/Ter|\*$|\*\d|X$/.test(proteinText)) result.consequence = "Nonsense / stop-related";
-  else if (/del/i.test(proteinText)) result.consequence = "Deletion";
-  else if (/dup/i.test(proteinText)) result.consequence = "Duplication";
-  else if (/ins/i.test(proteinText)) result.consequence = "Insertion";
-  else if (/^c\./i.test(raw) && /[+-]\d/.test(raw)) result.consequence = "Intronic / splice region";
+  // Position class from the cDNA part: 5'UTR (c.-N), 3'UTR (c.*N), intronic (c.N+N / c.N-N)
+  const cdnaPos = result.cdna?.replace(/^c\.\[?/i, "") ?? "";
+  const cdnaClass = !result.cdna
+    ? null
+    : /^-\d+[+-]\d/.test(cdnaPos) || /^\*\d+[+-]\d/.test(cdnaPos) || /^\d+[+-]\d/.test(cdnaPos)
+      ? "Intronic / splice region"
+      : /^-\d/.test(cdnaPos)
+        ? "5′ UTR"
+        : /^\*\d/.test(cdnaPos)
+          ? "3′ UTR"
+          : null;
+
+  // Only interpret protein keywords when a protein description is present
+  const hasProtein = Boolean(proteinChunk) || !/^c\./i.test(raw);
+  if (hasProtein && /ext/i.test(proteinText))
+    result.consequence = "Stop-loss (C-terminal extension)";
+  else if (hasProtein && /^(Met|M)1(\?|\w*$)/.test(proteinText) && /\?|0/.test(proteinText))
+    result.consequence = "Start-loss";
+  else if (hasProtein && /fs/i.test(proteinText)) result.consequence = "Frameshift";
+  else if (hasProtein && /delins/i.test(proteinText)) result.consequence = "Deletion-insertion";
+  else if (hasProtein && /\d(Ter|\*|X)$|\d(Ter|\*|X)\b/.test(proteinText))
+    result.consequence = "Nonsense";
+  else if (hasProtein && /del/i.test(proteinText)) result.consequence = "Deletion";
+  else if (hasProtein && /dup/i.test(proteinText)) result.consequence = "Duplication";
+  else if (hasProtein && /ins/i.test(proteinText)) result.consequence = "Insertion";
+  else if (cdnaClass) result.consequence = cdnaClass;
+  else if (/^c\./i.test(raw) && /delins/i.test(raw)) result.consequence = "Deletion-insertion";
+  else if (/^c\./i.test(raw) && /del/i.test(raw)) result.consequence = "Deletion";
+  else if (/^c\./i.test(raw) && /dup/i.test(raw)) result.consequence = "Duplication";
+  else if (/^c\./i.test(raw) && /ins/i.test(raw)) result.consequence = "Insertion";
 
   const toOne = (code: string | undefined): string | undefined =>
-    code ? (THREE_TO_ONE[code] ?? code) : undefined;
+    code ? (code === "*" || code === "X" ? "*" : (THREE_TO_ONE[code] ?? code)) : undefined;
 
-  const three = proteinText.match(/^([A-Z][a-z]{2})(\d+)([A-Z][a-z]{2})?/);
-  const one = three ? null : proteinText.match(/^([A-Z*])(\d+)([A-Z*])?/);
-  if (three) {
-    const ref = toOne(three[1]);
-    const alt = toOne(three[3]);
+  // Three-letter notation is used when the description starts with a three-letter code
+  // (or a stop symbol followed by one), e.g. Ser188Phe, Ter143Gln, *143Gln.
+  const three = proteinText.match(/^(Ter|[A-Z][a-z]{2}|\*)(\d+)(Ter|[A-Z][a-z]{2}|\*|=)?/);
+  const isThree = Boolean(
+    three && (/^[A-Z][a-z]{2}/.test(proteinText) || /^\*\d+[A-Z][a-z]{2}/.test(proteinText)),
+  );
+  const one = isThree ? null : proteinText.match(/^([A-Z*])(\d+)([A-Z*]|=)?(?![a-z])/);
+  const m = isThree ? three : one;
+  if (m && !(isThree && !THREE_TO_ONE[m[1]!] && m[1] !== "*")) {
+    const ref = toOne(m[1]);
+    const alt = m[3] === "=" ? ref : toOne(m[3]);
     if (ref) result.refAa = ref;
-    if (alt) result.altAa = alt;
-    result.residue = Number(three[2]);
-  } else if (one) {
-    const ref = one[1];
-    const alt = one[3];
-    if (ref) result.refAa = ref;
-    if (alt) result.altAa = alt;
-    result.residue = Number(one[2]);
+    if (alt && !/fs|ext|del|ins|dup/i.test(proteinText)) result.altAa = alt;
+    result.residue = Number(m[2]);
   } else {
     const bare = proteinText.match(/(\d+)/);
     if (bare && /p\./.test(raw)) result.residue = Number(bare[1]);
@@ -74,10 +116,13 @@ export function parseVariant(input: string): ParsedVariant {
   // Multi-change allele: c.[19G>A;295G>A]
   const multi = (result.cdna ?? "").match(/^c\.\[(.+)\]$/) ?? raw.match(/c\.\[([^\]]+)\]/);
   if (multi) {
-    const rs = multi[1]!.split(/\s*;\s*/).map((part) => {
-      const m = part.trim().match(/^(?:c\.)?(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
-      return m ? Math.ceil(Number(m[1]) / 3) : 0;
-    }).filter((n) => n > 0);
+    const rs = multi[1]!
+      .split(/\s*;\s*/)
+      .map((part) => {
+        const m = part.trim().match(/^(?:c\.)?(\d+)(?=[ACGTacgt]>|del|dup|ins|_|$)/);
+        return m ? Math.ceil(Number(m[1]) / 3) : 0;
+      })
+      .filter((n) => n > 0);
     const uniq = [...new Set(rs)];
     if (uniq.length) {
       result.residue = uniq[0]!;
@@ -123,18 +168,31 @@ function classOf(aa: string): string {
 export function substitutionContext(p: ParsedVariant): string[] {
   const notes: string[] = [];
   if (!p.refAa || !p.altAa) return notes;
+  if (p.altAa === "*") {
+    notes.push(
+      "Premature stop codon — truncated protein, or no protein if the transcript undergoes nonsense-mediated decay.",
+    );
+    return notes;
+  }
+  if (p.refAa === "*" || p.refAa === p.altAa) return notes;
   const a = classOf(p.refAa);
   const b = classOf(p.altAa);
-  notes.push(`${ONE_TO_THREE[p.refAa] ?? p.refAa} is ${a}; ${ONE_TO_THREE[p.altAa] ?? p.altAa} is ${b}.`);
-  if (a !== b) notes.push("Change of amino-acid class — possible effect on local packing or electrostatics.");
+  notes.push(
+    `${ONE_TO_THREE[p.refAa] ?? p.refAa} is ${a}; ${ONE_TO_THREE[p.altAa] ?? p.altAa} is ${b}.`,
+  );
+  if (a !== b)
+    notes.push("Change of amino-acid class — possible effect on local packing or electrostatics.");
   if (p.refAa === "G") notes.push("Loss of glycine may restrict backbone flexibility.");
-  if (p.refAa === "P" || p.altAa === "P") notes.push("Proline change can disrupt secondary structure.");
-  if (p.refAa === "C" || p.altAa === "C") notes.push("Cysteine change may alter disulphide bonding or add a free thiol.");
+  if (p.refAa === "P" || p.altAa === "P")
+    notes.push("Proline change can disrupt secondary structure.");
+  if (p.refAa === "C" || p.altAa === "C")
+    notes.push("Cysteine change may alter disulphide bonding or add a free thiol.");
   return notes;
 }
 
 const CODON_TABLE: Record<string, string> = (() => {
-  const b = "TCAG", aa = "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
+  const b = "TCAG",
+    aa = "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
   const m: Record<string, string> = {};
   let i = 0;
   for (const x of b) for (const y of b) for (const z of b) m[x + y + z] = aa[i++]!;
@@ -142,7 +200,10 @@ const CODON_TABLE: Record<string, string> = (() => {
 })();
 const three = (a: string) => (a === "*" ? "Ter" : (ONE_TO_THREE[a] ?? a));
 
-export type Translation = { kind: "c2p"; protein: string; note?: string } | { kind: "p2c"; options: string[]; note?: string } | { kind: "error"; note: string };
+export type Translation =
+  | { kind: "c2p"; protein: string; note?: string }
+  | { kind: "p2c"; options: string[]; note?: string }
+  | { kind: "error"; note: string };
 
 /** Predict p. from a simple coding substitution, or candidate c. SNVs from a protein missense/nonsense. Uses the transcript CDS. */
 export function translateVariant(input: string, cds: string): Translation | null {
@@ -150,29 +211,54 @@ export function translateVariant(input: string, cds: string): Translation | null
   if (!raw || !cds) return null;
   const c = raw.match(/c\.(\d+)([ACGT])>([ACGT])/i);
   if (c && !/c\.\[/.test(raw)) {
-    const pos = Number(c[1]), ref = c[2]!.toUpperCase(), alt = c[3]!.toUpperCase();
-    if (pos > cds.length) return { kind: "error", note: `c.${pos} is beyond the coding sequence (${cds.length} nt).` };
-    if (cds[pos - 1] !== ref) return { kind: "error", note: `Reference base at c.${pos} is ${cds[pos - 1]}, not ${ref} — check transcript.` };
-    const codonNo = Math.ceil(pos / 3), start = (codonNo - 1) * 3;
+    const pos = Number(c[1]),
+      ref = c[2]!.toUpperCase(),
+      alt = c[3]!.toUpperCase();
+    if (pos > cds.length)
+      return { kind: "error", note: `c.${pos} is beyond the coding sequence (${cds.length} nt).` };
+    if (cds[pos - 1] !== ref)
+      return {
+        kind: "error",
+        note: `Reference base at c.${pos} is ${cds[pos - 1]}, not ${ref} — check transcript.`,
+      };
+    const codonNo = Math.ceil(pos / 3),
+      start = (codonNo - 1) * 3;
     const codon = cds.slice(start, start + 3);
-    const mut = codon.split(""); mut[(pos - 1) % 3] = alt;
-    const a = CODON_TABLE[codon] ?? "?", b = CODON_TABLE[mut.join("")] ?? "?";
-    const protein = a === b ? `p.(${three(a)}${codonNo}=)` : codonNo === 1 && a === "M" ? "p.(Met1?)" : `p.(${three(a)}${codonNo}${three(b)})`;
+    const mut = codon.split("");
+    mut[(pos - 1) % 3] = alt;
+    const a = CODON_TABLE[codon] ?? "?",
+      b = CODON_TABLE[mut.join("")] ?? "?";
+    const protein =
+      a === b
+        ? `p.(${three(a)}${codonNo}=)`
+        : codonNo === 1 && a === "M"
+          ? "p.(Met1?)"
+          : `p.(${three(a)}${codonNo}${three(b)})`;
     return { kind: "c2p", protein, note: `${codon} → ${mut.join("")}` };
   }
   const p = parseVariant(raw);
   if (!/^c\./i.test(raw) && !p.cdna && p.residue && p.refAa && p.altAa) {
     const start = (p.residue - 1) * 3;
     const codon = cds.slice(start, start + 3);
-    if (codon.length < 3) return { kind: "error", note: `Residue ${p.residue} is beyond the coding sequence.` };
-    if (CODON_TABLE[codon] !== p.refAa) return { kind: "error", note: `Codon ${p.residue} (${codon}) encodes ${three(CODON_TABLE[codon] ?? "?")}, not ${three(p.refAa)}.` };
+    if (codon.length < 3)
+      return { kind: "error", note: `Residue ${p.residue} is beyond the coding sequence.` };
+    if (CODON_TABLE[codon] !== p.refAa)
+      return {
+        kind: "error",
+        note: `Codon ${p.residue} (${codon}) encodes ${three(CODON_TABLE[codon] ?? "?")}, not ${three(p.refAa)}.`,
+      };
     const options: string[] = [];
-    for (let i = 0; i < 3; i++) for (const nt of "ACGT") {
-      if (nt === codon[i]) continue;
-      const m = codon.split(""); m[i] = nt;
-      if (CODON_TABLE[m.join("")] === p.altAa) options.push(`c.${start + i + 1}${codon[i]}>${nt}`);
-    }
-    return options.length ? { kind: "p2c", options } : { kind: "p2c", options: [], note: "Not reachable by a single-nucleotide change." };
+    for (let i = 0; i < 3; i++)
+      for (const nt of "ACGT") {
+        if (nt === codon[i]) continue;
+        const m = codon.split("");
+        m[i] = nt;
+        if (CODON_TABLE[m.join("")] === p.altAa)
+          options.push(`c.${start + i + 1}${codon[i]}>${nt}`);
+      }
+    return options.length
+      ? { kind: "p2c", options }
+      : { kind: "p2c", options: [], note: "Not reachable by a single-nucleotide change." };
   }
   return null;
 }

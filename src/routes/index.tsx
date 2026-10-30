@@ -6,8 +6,11 @@ import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   Camera,
   Check,
+  CircleCheck,
+  CircleX,
   ExternalLink,
   Info,
   Loader2,
@@ -23,13 +26,7 @@ import { buildProvenance } from "@/lib/provenance";
 import { selectionStore, useSelectedResidue } from "@/lib/selection-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -52,7 +49,14 @@ import {
   transcriptQuery,
   uniProtQuery,
 } from "@/lib/evidence-queries";
-import { describeVariant, parseVariant, substitutionContext, translateVariant } from "@/lib/variant";
+import {
+  describeVariant,
+  parseVariant,
+  substitutionContext,
+  translateCds,
+  translateVariant,
+  validateVariant,
+} from "@/lib/variant";
 
 const StructureViewer = lazy(() => import("@/components/StructureViewer"));
 
@@ -92,9 +96,7 @@ function Workspace() {
 
   const uniprot = useQuery(uniProtQuery(gene.uniprot, residue));
   const alphafold = useQuery(alphaFoldQuery(gene.uniprot, residue));
-  const clinvar = useQuery(
-    clinVarQuery(gene.symbol, parsed.protein ?? parsed.cdna ?? undefined),
-  );
+  const clinvar = useQuery(clinVarQuery(gene.symbol, parsed.protein ?? parsed.cdna ?? undefined));
   const primaryMim = gene.phenotypeMim?.[0]?.mim ?? gene.mim;
   const omim = useQuery({ ...omimQuery(primaryMim ?? ""), enabled: Boolean(primaryMim) });
 
@@ -112,7 +114,9 @@ function Workspace() {
       }
       const g = info.gene ? getGene(info.gene) : undefined;
       if (!g) {
-        toast.error(`IthaID ${id} (${info.hgvsName || info.commonName}) is not in this app's gene panel.`);
+        toast.error(
+          `IthaID ${id} (${info.hgvsName || info.commonName}) is not in this app's gene panel.`,
+        );
         return;
       }
 
@@ -129,7 +133,6 @@ function Workspace() {
       setIthaLoading(false);
     }
   };
-
 
   const capture = async () => {
     const fn = snapshotRef.current;
@@ -209,9 +212,7 @@ function Workspace() {
                           : "hover:bg-accent"
                       }`}
                     >
-                      {state.presetLabel === p.label && (
-                        <Check className="mr-1 inline h-3 w-3" />
-                      )}
+                      {state.presetLabel === p.label && <Check className="mr-1 inline h-3 w-3" />}
                       {p.label}
                     </button>
                   ))}
@@ -222,7 +223,9 @@ function Workspace() {
                 </p>
               )}
 
-              {gene.symbol === "G6PD" && <G6pdClassificationPanel presetLabel={state.presetLabel} presets={gene.presets} />}
+              {gene.symbol === "G6PD" && (
+                <G6pdClassificationPanel presetLabel={state.presetLabel} presets={gene.presets} />
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="variant">Variant</Label>
@@ -237,10 +240,14 @@ function Workspace() {
               </div>
 
               {gene.category === "hemoglobin" && (
-                <IthaSearch loading={ithaLoading} loadedId={state.ithaId} onLoad={(id) => void loadIthaId(id)} />
+                <IthaSearch
+                  loading={ithaLoading}
+                  loadedId={state.ithaId}
+                  onLoad={(id) => void loadIthaId(id)}
+                />
               )}
 
-               <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="zygosity">Zygosity</Label>
                   <Select
@@ -251,13 +258,17 @@ function Workspace() {
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      {["Heterozygous", "Homozygous", "Compound heterozygous", "Hemizygous", "Mosaic"].map(
-                        (z) => (
-                          <SelectItem key={z} value={z}>
-                            {z}
-                          </SelectItem>
-                        ),
-                      )}
+                      {[
+                        "Heterozygous",
+                        "Homozygous",
+                        "Compound heterozygous",
+                        "Hemizygous",
+                        "Mosaic",
+                      ].map((z) => (
+                        <SelectItem key={z} value={z}>
+                          {z}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -276,7 +287,13 @@ function Workspace() {
                 <div className="rounded-md border bg-muted/40 p-3 text-xs">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge>{parsed.consequence}</Badge>
-                    {residue && <Badge variant="outline">{parsed.extraResidues?.length ? `Residues ${[residue, ...parsed.extraResidues].join(", ")}` : `Residue ${residue}`}</Badge>}
+                    {residue && (
+                      <Badge variant="outline">
+                        {parsed.extraResidues?.length
+                          ? `Residues ${[residue, ...parsed.extraResidues].join(", ")}`
+                          : `Residue ${residue}`}
+                      </Badge>
+                    )}
                     {parsed.refAa && parsed.altAa && (
                       <Badge variant="outline">{describeVariant(parsed)}</Badge>
                     )}
@@ -285,30 +302,59 @@ function Workspace() {
                     const t = translateVariant(state.variantInput, transcript.data?.cds ?? "");
                     if (!t) return null;
                     const tx = transcript.data?.transcriptId ?? "";
-                    if (t.kind === "error") return <p className="mt-2 text-destructive">{t.note}</p>;
-                    if (t.kind === "c2p") return (
-                      <p className="mt-2"><span className="text-muted-foreground">Predicted protein ({tx}): </span><span className="font-mono font-semibold">{t.protein}</span> <span className="text-muted-foreground">· codon {t.note}</span></p>
-                    );
+                    if (t.kind === "error") return null; // reported by the reference check below
+                    if (t.kind === "c2p")
+                      return (
+                        <p className="mt-2">
+                          <span className="text-muted-foreground">Predicted protein ({tx}): </span>
+                          <span className="font-mono font-semibold">{t.protein}</span>{" "}
+                          <span className="text-muted-foreground">· codon {t.note}</span>
+                        </p>
+                      );
                     return (
                       <div className="mt-2">
                         <span className="text-muted-foreground">Possible cDNA ({tx}): </span>
-                        {t.options.length ? t.options.map((o) => (
-                          <button key={o} type="button" className="mr-1 rounded border px-1.5 py-0.5 font-mono hover:bg-muted"
-                            onClick={() => caseStore.set({ variantInput: `${o} (${state.variantInput.replace(/^p\./, "p.")})` })}>{o}</button>
-                        )) : <span>{t.note}</span>}
+                        {t.options.length ? (
+                          t.options.map((o) => (
+                            <button
+                              key={o}
+                              type="button"
+                              className="mr-1 rounded border px-1.5 py-0.5 font-mono hover:bg-muted"
+                              onClick={() =>
+                                caseStore.set({
+                                  variantInput: `${o} (${state.variantInput.replace(/^p\./, "p.")})`,
+                                })
+                              }
+                            >
+                              {o}
+                            </button>
+                          ))
+                        ) : (
+                          <span>{t.note}</span>
+                        )}
                       </div>
                     );
                   })()}
+                  <ReferenceCheckList
+                    input={state.variantInput}
+                    cds={transcript.data?.cds ?? ""}
+                    transcriptId={transcript.data?.transcriptId || "the reference transcript"}
+                    uniprotSeq={uniprot.data?.sequence}
+                    loading={transcript.isLoading}
+                  />
                   {uniprot.data?.residueAa && residue && (
                     <p className="mt-2 text-muted-foreground">
                       UniProt residue {residue} is {uniprot.data.residueAa}
-                      {parsed.refAa && parsed.refAa !== uniprot.data.residueAa && (
-                        <span className="text-destructive">
-                          {" "}
-                          — does not match the entered reference amino acid ({parsed.refAa}).
-                          Check numbering (legacy vs HGVS) or isoform.
-                        </span>
-                      )}
+                      {parsed.refAa &&
+                        parsed.refAa !== "*" &&
+                        parsed.refAa !== uniprot.data.residueAa &&
+                        translateCds(transcript.data?.cds ?? "") !== uniprot.data.sequence && (
+                          <span className="text-destructive">
+                            {" "}
+                            — does not match the entered reference amino acid ({parsed.refAa}).
+                            Check numbering (legacy vs HGVS) or isoform.
+                          </span>
+                        )}
                     </p>
                   )}
                   {substitutionContext(parsed).map((n) => (
@@ -323,7 +369,7 @@ function Workspace() {
         </div>
 
         {/* Right column: structure + evidence */}
-         <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-4">
           <ProteinMap
             info={uniprot.data}
             residue={residue}
@@ -349,7 +395,9 @@ function Workspace() {
                 <CardTitle className="text-base">AlphaFold structure</CardTitle>
                 <CardDescription>
                   {gene.protein} ({gene.uniprot})
-                  {focus ? ` — residue ${focus} ${focus === residue ? "(variant) " : "selected "}highlighted${focus !== residue && residue ? `, variant ${residue} also shown` : ""}; click the model to pick a residue` : " — enter a variant or click a position to highlight a residue"}
+                  {focus
+                    ? ` — residue ${focus} ${focus === residue ? "(variant) " : "selected "}highlighted${focus !== residue && residue ? `, variant ${residue} also shown` : ""}; click the model to pick a residue`
+                    : " — enter a variant or click a position to highlight a residue"}
                 </CardDescription>
               </div>
               <div className="grid gap-2 sm:flex sm:items-center">
@@ -432,7 +480,6 @@ function Workspace() {
             </CardContent>
           </Card>
 
-
           <div className="grid gap-4 md:grid-cols-2">
             <EvidenceCard
               title="UniProt"
@@ -444,7 +491,8 @@ function Workspace() {
               ) : (
                 <div className="space-y-1.5">
                   <p>
-                    <strong>{uniprot.data?.proteinName || gene.protein}</strong> — {uniprot.data?.length || "?"} aa
+                    <strong>{uniprot.data?.proteinName || gene.protein}</strong> —{" "}
+                    {uniprot.data?.length || "?"} aa
                   </p>
                   {uniprot.data?.functionText && (
                     <p className="text-muted-foreground">
@@ -478,17 +526,22 @@ function Workspace() {
               {alphafold.data?.available ? (
                 <div className="space-y-1">
                   <p>Predicted model {alphafold.data.version ?? ""} available.</p>
-                  {alphafold.data.modelCreatedDate && <p>Created {alphafold.data.modelCreatedDate}</p>}
+                  {alphafold.data.modelCreatedDate && (
+                    <p>Created {alphafold.data.modelCreatedDate}</p>
+                  )}
                   {alphafold.data.plddt != null ? (
                     <p>
-                      Residue {residue} pLDDT {alphafold.data.plddt.toFixed(1)} — {alphafold.data.plddtBand}
+                      Residue {residue} pLDDT {alphafold.data.plddt.toFixed(1)} —{" "}
+                      {alphafold.data.plddtBand}
                     </p>
                   ) : (
                     <p>Enter a variant residue to read its local model confidence.</p>
                   )}
                 </div>
               ) : (
-                <p className="text-muted-foreground">{alphafold.data?.error ?? "No model found."}</p>
+                <p className="text-muted-foreground">
+                  {alphafold.data?.error ?? "No model found."}
+                </p>
               )}
             </EvidenceCard>
 
@@ -514,7 +567,8 @@ function Workspace() {
                 </ul>
               ) : (
                 <p className="text-muted-foreground">
-                  No ClinVar record matched this search{state.variantInput ? "" : " (enter a variant)"}.
+                  No ClinVar record matched this search
+                  {state.variantInput ? "" : " (enter a variant)"}.
                 </p>
               )}
             </EvidenceCard>
@@ -667,5 +721,78 @@ function EvidenceCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ReferenceCheckList({
+  input,
+  cds,
+  transcriptId,
+  uniprotSeq,
+  loading,
+}: {
+  input: string;
+  cds: string;
+  transcriptId: string;
+  uniprotSeq: string | undefined;
+  loading: boolean;
+}) {
+  const result = useMemo(
+    () => validateVariant(input, cds, transcriptId, uniprotSeq),
+    [input, cds, transcriptId, uniprotSeq],
+  );
+  if (loading) {
+    return (
+      <p className="mt-2 flex items-center gap-1.5 text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" /> Checking against the reference transcript…
+      </p>
+    );
+  }
+  if (!result.checks.length) return null;
+  const problems = result.checks.filter((c) => c.level === "error" || c.level === "warn");
+  const shown = problems.length ? problems : result.checks;
+  const tone =
+    result.status === "error"
+      ? "border-destructive/40 bg-destructive/5 text-destructive"
+      : result.status === "warn"
+        ? "border-amber-500/40 bg-amber-500/5 text-amber-800 dark:text-amber-300"
+        : result.status === "ok"
+          ? "border-emerald-600/30 bg-emerald-600/5 text-emerald-800 dark:text-emerald-300"
+          : "border-border bg-background text-muted-foreground";
+  const Icon =
+    result.status === "error"
+      ? CircleX
+      : result.status === "warn"
+        ? AlertTriangle
+        : result.status === "ok"
+          ? CircleCheck
+          : Info;
+  const title =
+    result.status === "error"
+      ? "Does not match the reference"
+      : result.status === "warn"
+        ? "Check numbering"
+        : result.status === "ok"
+          ? `Matches ${transcriptId}`
+          : "Reference check";
+  return (
+    <div
+      role={result.status === "error" ? "alert" : undefined}
+      className={`mt-2 rounded-md border p-2 ${tone}`}
+    >
+      <p className="flex items-center gap-1.5 font-semibold">
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        {title}
+      </p>
+      {(problems.length > 0 || result.status === "info") && (
+        <ul className="mt-1 space-y-0.5 pl-5">
+          {shown.map((c) => (
+            <li key={c.message} className="list-disc">
+              {c.message}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

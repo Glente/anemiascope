@@ -262,3 +262,192 @@ export function translateVariant(input: string, cds: string): Translation | null
   }
   return null;
 }
+
+export type CheckLevel = "ok" | "warn" | "error" | "info";
+export type ReferenceCheck = { level: CheckLevel; message: string };
+export type ValidationResult = {
+  /** Worst level among the checks; "info" when nothing could be checked. */
+  status: CheckLevel;
+  checks: ReferenceCheck[];
+};
+
+/** Translate a coding sequence (stop codon excluded). */
+export function translateCds(cds: string): string {
+  let out = "";
+  for (let i = 0; i + 3 <= cds.length; i += 3) {
+    const aa = CODON_TABLE[cds.slice(i, i + 3).toUpperCase()] ?? "X";
+    if (aa === "*") break;
+    out += aa;
+  }
+  return out;
+}
+
+const RANK: Record<CheckLevel, number> = { info: 0, ok: 1, warn: 2, error: 3 };
+
+/** Simple coding substitutions in the cDNA part, including multi-change alleles c.[a;b]. */
+function cdnaSubstitutions(cdna: string): { pos: number; ref: string; alt: string }[] {
+  const body = cdna.replace(/^c\.\[?/i, "").replace(/\]$/, "");
+  return body
+    .split(/\s*;\s*/)
+    .map((part) => part.replace(/^c\./i, "").match(/^(\d+)([ACGT])>([ACGT])$/i))
+    .filter((m): m is RegExpMatchArray => Boolean(m))
+    .map((m) => ({ pos: Number(m[1]), ref: m[2]!.toUpperCase(), alt: m[3]!.toUpperCase() }));
+}
+
+/**
+ * Checks an entered variant against the reference coding sequence (Ensembl canonical)
+ * and, when given, the UniProt sequence used for structure mapping. Descriptive only.
+ */
+export function validateVariant(
+  input: string,
+  cds: string,
+  transcriptId = "the reference transcript",
+  uniprotSeq?: string,
+): ValidationResult {
+  const checks: ReferenceCheck[] = [];
+  const raw = input.trim();
+  const p = parseVariant(raw);
+  const done = (): ValidationResult => ({
+    status: checks.reduce<CheckLevel>((w, c) => (RANK[c.level] > RANK[w] ? c.level : w), "info"),
+    checks,
+  });
+  if (!raw) return done();
+
+  const protein = cds ? translateCds(cds) : "";
+
+  // Transcript vs UniProt: residue numbers only map 1:1 onto the structure if they agree.
+  if (protein && uniprotSeq) {
+    if (protein !== uniprotSeq) {
+      checks.push({
+        level: "warn",
+        message: `${transcriptId} encodes ${protein.length} aa but the UniProt/AlphaFold sequence has ${uniprotSeq.length} aa — residue numbers may not map 1:1 onto the structure (different isoform).`,
+      });
+    }
+  }
+
+  if (/^(\d+|[gmnr])\./i.test(raw) || /^[gmnr]\./i.test(raw.replace(/^[^:]+:/, ""))) {
+    checks.push({
+      level: "info",
+      message: "Only c. and p. descriptions can be checked against the coding sequence.",
+    });
+    return done();
+  }
+
+  if (!cds) {
+    if (p.cdna || p.residue)
+      checks.push({
+        level: "info",
+        message: "Reference coding sequence not loaded yet — cannot check.",
+      });
+    return done();
+  }
+
+  // cDNA checks
+  let predicted: { residue: number; ref: string; alt: string }[] = [];
+  if (p.cdna) {
+    if (/^c\.\[?[-*]/.test(p.cdna) || /^c\.\[?\d+[+-]\d/.test(p.cdna)) {
+      checks.push({
+        level: "info",
+        message:
+          "Intronic or UTR position — outside the coding sequence, so the reference base cannot be checked here.",
+      });
+    }
+    const subs = cdnaSubstitutions(p.cdna);
+    for (const s of subs) {
+      if (s.pos > cds.length) {
+        checks.push({
+          level: "error",
+          message: `c.${s.pos} is beyond the coding sequence of ${transcriptId} (${cds.length} nt).`,
+        });
+        continue;
+      }
+      const actual = cds[s.pos - 1]!.toUpperCase();
+      if (actual !== s.ref) {
+        checks.push({
+          level: "error",
+          message: `Reference base at c.${s.pos} in ${transcriptId} is ${actual}, not ${s.ref}. Check transcript or strand.`,
+        });
+        continue;
+      }
+      const codonNo = Math.ceil(s.pos / 3);
+      const start = (codonNo - 1) * 3;
+      const codon = cds.slice(start, start + 3).toUpperCase();
+      const mut = codon.split("");
+      mut[(s.pos - 1) % 3] = s.alt;
+      predicted.push({
+        residue: codonNo,
+        ref: CODON_TABLE[codon] ?? "?",
+        alt: CODON_TABLE[mut.join("")] ?? "?",
+      });
+      checks.push({ level: "ok", message: `c.${s.pos}${s.ref} matches ${transcriptId}.` });
+    }
+    // Deletions / duplications that spell out the reference bases, e.g. c.123_125delGAA
+    const span = p.cdna.match(/^c\.(\d+)(?:_(\d+))?(del|dup)([ACGT]+)$/i);
+    if (span) {
+      const a = Number(span[1]);
+      const b = Number(span[2] ?? span[1]);
+      const stated = span[4]!.toUpperCase();
+      const actual = cds.slice(a - 1, b).toUpperCase();
+      if (b > cds.length)
+        checks.push({
+          level: "error",
+          message: `c.${b} is beyond the coding sequence (${cds.length} nt).`,
+        });
+      else if (actual !== stated)
+        checks.push({
+          level: "error",
+          message: `${transcriptId} has ${actual} at c.${a}${b !== a ? `_${b}` : ""}, not ${stated}.`,
+        });
+      else
+        checks.push({
+          level: "ok",
+          message: `Stated ${span[3]!.toLowerCase()} bases ${stated} match ${transcriptId}.`,
+        });
+    }
+  }
+  if (predicted.length > 1) predicted = []; // multi-change alleles: per-codon check only
+
+  // Protein checks
+  const entersProtein = Boolean(p.protein) || (!p.cdna && Boolean(p.residue && p.refAa));
+  if (entersProtein && p.residue && p.refAa && p.refAa !== "*") {
+    const aaAt = protein[p.residue - 1];
+    if (!aaAt) {
+      checks.push({
+        level: "error",
+        message: `Residue ${p.residue} is beyond the protein (${protein.length} aa).`,
+      });
+    } else if (aaAt !== p.refAa) {
+      checks.push({
+        level: "error",
+        message: `Residue ${p.residue} in ${transcriptId} is ${three(aaAt)}, not ${three(p.refAa)}. Legacy numbering (e.g. hemoglobin without Met1) or another isoform?`,
+      });
+    } else {
+      checks.push({
+        level: "ok",
+        message: `${three(p.refAa)}${p.residue} matches ${transcriptId}.`,
+      });
+    }
+  }
+
+  // Concordance between entered c. and entered p.
+  const pred = predicted[0];
+  if (pred && entersProtein && p.residue) {
+    const enteredAlt = p.altAa;
+    const predAlt = pred.alt;
+    if (pred.residue !== p.residue) {
+      checks.push({
+        level: "error",
+        message: `The cDNA change affects codon ${pred.residue}, but the protein description names residue ${p.residue}.`,
+      });
+    } else if (enteredAlt && predAlt !== enteredAlt && !(pred.residue === 1 && pred.ref === "M")) {
+      checks.push({
+        level: "error",
+        message: `The cDNA change predicts ${three(pred.ref)}${pred.residue}${pred.ref === predAlt ? "=" : three(predAlt)}, but ${three(p.refAa ?? "?")}${p.residue}${three(enteredAlt)} was entered.`,
+      });
+    } else if (enteredAlt) {
+      checks.push({ level: "ok", message: "cDNA and protein descriptions agree." });
+    }
+  }
+
+  return done();
+}

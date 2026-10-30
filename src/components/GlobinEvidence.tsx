@@ -2,24 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  fetchHbVar,
-  fetchIthaGenes,
-  hbvarUrl,
-  ithaUrl,
-  searchIthaGenes,
-} from "@/lib/globin.functions";
-
-export const ithaQuery = (ithaId: string) => ({
-  queryKey: ["ithagenes", ithaId],
-  queryFn: () => fetchIthaGenes({ data: { ithaId } }),
-  staleTime: 1000 * 60 * 60,
-});
-export const hbvarQuery = (hbvarId: string) => ({
-  queryKey: ["hbvar", hbvarId],
-  queryFn: () => fetchHbVar({ data: { hbvarId } }),
-  staleTime: 1000 * 60 * 60,
-});
+import { hbvarQuery, ithaQuery } from "@/lib/evidence-queries";
+import { hbvarUrl, ithaUrl, searchIthaGenes } from "@/lib/globin.functions";
 
 const GLOBIN = ["HBB", "HBA1", "HBA2", "HBD"] as const;
 

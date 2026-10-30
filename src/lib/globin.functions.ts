@@ -63,17 +63,61 @@ export type IthaInfo = {
   error?: string | undefined;
 };
 
-function extractPhpvars(html: string): any | null {
+type IthaNames = { name?: unknown[] };
+type IthaStat = {
+  unit?: unknown;
+  n?: unknown;
+  mean?: unknown;
+  sd?: number | string | null;
+  min?: number | string | null;
+  max?: number | string | null;
+};
+type IthaHplcJson = {
+  instr_name?: unknown;
+  method?: unknown;
+  area_per?: number | string | null;
+  ret_time?: number | string | null;
+  comments?: unknown;
+};
+
+/** The `mut_info` object embedded in an IthaGenes page (scraped — every field optional). */
+type IthaMutInfo = {
+  ithaID?: string | number;
+  links?: { name?: string; link?: string }[];
+  genes?: { name?: string[] };
+  hgvs_name?: string;
+  history?: { updated?: { date?: string[] }; created?: string[] };
+  ithaphen?: Record<string, IthaStat[] | undefined>;
+  hplc?: IthaHplcJson[];
+  common_name?: string;
+  hb_var?: string;
+  protein_name?: string;
+  aa_no?: string | number;
+  aa?: string;
+  pathogenicity?: string;
+  molmech?: string;
+  inheritance?: string;
+  origin?: string;
+  hemo?: IthaNames;
+  hemo_category?: string;
+  clin_phen?: IthaNames;
+  globin_phen?: IthaNames;
+  synonyms?: IthaNames;
+};
+
+function extractPhpvars(html: string): { phpvars: { mut_info?: IthaMutInfo } } | null {
   // phpvars may be top-level ({"phpvars":…) or nested inside another object (…,"phpvars":{…})
   const k = html.indexOf('"phpvars":');
   if (k < 0) return null;
   const i = html.indexOf("{", k + 10);
   if (i < 0) return null;
   const inner = extractObject(html, i);
-  return inner ? { phpvars: inner } : null;
+  return inner && typeof inner === "object"
+    ? { phpvars: inner as { mut_info?: IthaMutInfo } }
+    : null;
 }
 
-function extractObject(html: string, i: number): any | null {
+function extractObject(html: string, i: number): unknown {
   // walk braces to find the end of the JSON object
   let depth = 0,
     inStr = false,
@@ -99,7 +143,13 @@ function extractObject(html: string, i: number): any | null {
   return null;
 }
 
-const names = (x: any): string[] => ((x?.name ?? []) as any[]).filter(Boolean).map(String);
+const num = (v: unknown): number | null => {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const names = (x: IthaNames | undefined): string[] => (x?.name ?? []).filter(Boolean).map(String);
 
 export const fetchIthaGenes = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => z.object({ ithaId: z.string().regex(/^\d{1,6}$/) }).parse(i))
@@ -137,32 +187,32 @@ export const fetchIthaGenes = createServerFn({ method: "GET" })
       const m = extractPhpvars(await res.text())?.phpvars?.mut_info;
       if (!m || !m.ithaID)
         return { ...base, error: `No IthaGenes entry for IthaID ${data.ithaId}` };
-      const link = (n: string) => (m.links ?? []).find((l: any) => l?.name === n)?.link ?? null;
-      const geneRaw = m.genes?.name?.[0] as string | undefined;
+      const link = (n: string) => (m.links ?? []).find((l) => l?.name === n)?.link ?? null;
+      const geneRaw = m.genes?.name?.[0];
       const hgvs = String(m.hgvs_name ?? "");
       const gene =
         (geneRaw && ITHA_GENE_NAME[geneRaw]) || (/^(HB[A-Z0-9]+):/.exec(hgvs)?.[1] ?? null);
       const upd: string[] = m.history?.updated?.date ?? [];
       const last = upd.length ? upd[upd.length - 1]! : (m.history?.created?.[0] ?? null);
-      const hematology: IthaPhenStat[] = Object.entries((m.ithaphen ?? {}) as Record<string, any[]>)
+      const hematology: IthaPhenStat[] = Object.entries(m.ithaphen ?? {})
         .map(([param, arr]) => {
-          const s = arr?.[0] ?? {};
+          const s: IthaStat = arr?.[0] ?? {};
           return {
             param,
             unit: String(s.unit ?? ""),
             n: Number(s.n ?? 0),
             mean: String(s.mean ?? ""),
-            sd: s.sd ?? null,
-            min: s.min ?? null,
-            max: s.max ?? null,
+            sd: num(s.sd),
+            min: num(s.min),
+            max: num(s.max),
           };
         })
         .filter((s) => s.mean !== "");
-      const hplc: IthaHplc[] = ((m.hplc ?? []) as any[]).slice(0, 6).map((h) => ({
+      const hplc: IthaHplc[] = (m.hplc ?? []).slice(0, 6).map((h) => ({
         instrument: String(h.instr_name ?? ""),
         method: String(h.method ?? ""),
-        areaPct: h.area_per ?? null,
-        retTime: h.ret_time ?? null,
+        areaPct: num(h.area_per),
+        retTime: num(h.ret_time),
         comment: String(h.comments ?? ""),
       }));
       return {
@@ -252,7 +302,13 @@ export const searchIthaGenes = createServerFn({ method: "GET" })
         const hgvs = cells[2] ?? "";
         // exact single-change match, or combination containing it
         const exact = hgvs === q;
-        const inCombo = hgvs.startsWith(`${data.gene}:c.[`) && hgvs.includes(data.cdna.slice(2));
+        const inCombo =
+          hgvs.startsWith(`${data.gene}:c.[`) &&
+          hgvs
+            .slice(`${data.gene}:c.[`.length)
+            .replace(/\]$/, "")
+            .split(";")
+            .some((part) => part.trim().replace(/^c\./, "") === data.cdna.slice(2));
         if (exact || inCombo)
           matches.push({
             ithaId: r[1]!,

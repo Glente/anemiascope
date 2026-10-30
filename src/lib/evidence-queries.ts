@@ -1,3 +1,4 @@
+import { fetchHbVar, fetchIthaGenes } from "@/lib/globin.functions";
 import { queryOptions } from "@tanstack/react-query";
 import {
   fetchAlphaFold,
@@ -55,3 +56,14 @@ export const links = {
   varsome: (gene: string, variant: string) =>
     `https://varsome.com/variant/hg38/${encodeURIComponent(`${gene} ${variant}`)}`,
 };
+
+export const ithaQuery = (ithaId: string) => ({
+  queryKey: ["ithagenes", ithaId],
+  queryFn: () => fetchIthaGenes({ data: { ithaId } }),
+  staleTime: 1000 * 60 * 60,
+});
+export const hbvarQuery = (hbvarId: string) => ({
+  queryKey: ["hbvar", hbvarId],
+  queryFn: () => fetchHbVar({ data: { hbvarId } }),
+  staleTime: 1000 * 60 * 60,
+});

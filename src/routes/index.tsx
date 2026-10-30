@@ -1,7 +1,7 @@
 import { G6pdClassificationPanel } from "@/components/G6pdClassificationPanel";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { GlobinEvidence, ithaQuery } from "@/components/GlobinEvidence";
+import { GlobinEvidence } from "@/components/GlobinEvidence";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +44,7 @@ import { caseStore, useCase } from "@/lib/case-store";
 import {
   alphaFoldQuery,
   clinVarQuery,
+  ithaQuery,
   links,
   omimQuery,
   transcriptQuery,
@@ -341,6 +342,10 @@ function Workspace() {
                     transcriptId={transcript.data?.transcriptId || "the reference transcript"}
                     uniprotSeq={uniprot.data?.sequence}
                     loading={transcript.isLoading}
+                    error={
+                      transcript.data?.error ??
+                      (transcript.isError ? "Ensembl could not be reached" : undefined)
+                    }
                   />
                   {uniprot.data?.residueAa && residue && (
                     <p className="mt-2 text-muted-foreground">
@@ -730,12 +735,14 @@ function ReferenceCheckList({
   transcriptId,
   uniprotSeq,
   loading,
+  error,
 }: {
   input: string;
   cds: string;
   transcriptId: string;
   uniprotSeq: string | undefined;
   loading: boolean;
+  error: string | undefined;
 }) {
   const result = useMemo(
     () => validateVariant(input, cds, transcriptId, uniprotSeq),
@@ -745,6 +752,14 @@ function ReferenceCheckList({
     return (
       <p className="mt-2 flex items-center gap-1.5 text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" /> Checking against the reference transcript…
+      </p>
+    );
+  }
+  if (!cds && error) {
+    return (
+      <p className="mt-2 flex items-center gap-1.5 text-muted-foreground">
+        <Info className="h-3 w-3 shrink-0" /> Reference transcript unavailable ({error}) — the
+        variant could not be checked.
       </p>
     );
   }

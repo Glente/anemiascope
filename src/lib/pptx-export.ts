@@ -1,3 +1,5 @@
+import type PptxGenJS from "pptxgenjs";
+
 import type { Gene } from "@/data/genes";
 import type { CaseState } from "@/lib/case-store";
 import { flagLab, LAB_FIELDS } from "@/lib/case-store";
@@ -459,7 +461,7 @@ export async function buildDeck({
       text: t,
       options: { bold: true, color: WHITE, fill: { color: INK } },
     });
-    const rows: any[] = [
+    const rows: PptxGenJS.TableRow[] = [
       [hdr("Source"), hdr("Retrieved"), hdr("Record version"), hdr("Fields on these slides")],
     ];
     for (const p of provenance) {
@@ -469,9 +471,9 @@ export async function buildDeck({
         .join("\n");
       rows.push([
         { text: `${p.source}\n(${p.kind})`, options: { hyperlink: { url: p.viewUrl } } },
-        fmtTime(p.retrievedAt),
-        p.recordVersion || "not reported",
-        used || "—",
+        { text: fmtTime(p.retrievedAt) },
+        { text: p.recordVersion || "not reported" },
+        { text: used || "—" },
       ]);
     }
     s7.addTable(rows, {
@@ -504,7 +506,7 @@ export async function buildDeck({
   });
 }
 
-function slideTitle(slide: any, text: string) {
+function slideTitle(slide: PptxGenJS.Slide, text: string) {
   slide.background = { color: WHITE };
   slide.addText(text, {
     x: 0.5,

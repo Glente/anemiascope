@@ -1,6 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import type {
+  AlphaFoldPredictionJson,
+  ClinVarSummaryRecord,
+  EnsemblGeneJson,
+  ESearchJson,
+  ESummaryJson,
+  OmimEntryJson,
+  UniProtEntryJson,
+} from "@/lib/api-types";
+
 export type Provenance = {
   sourceUrl: string;
   retrievedAt: string;
@@ -85,14 +95,14 @@ export const fetchUniProt = createServerFn({ method: "GET" })
     try {
       const res = await fetch(url, { headers: { accept: "application/json" } });
       if (!res.ok) return { ...base, error: `UniProt returned ${res.status}` };
-      const json = (await res.json()) as Record<string, any>;
+      const json = (await res.json()) as UniProtEntryJson;
 
-      const sequence: string = json["sequence"]?.value ?? "";
+      const sequence: string = json.sequence?.value ?? "";
       const residue = data.residue;
       const features: UniProtFeature[] = [];
       const variantsAt: { description: string; alt: string }[] = [];
 
-      for (const f of (json["features"] ?? []) as any[]) {
+      for (const f of json.features ?? []) {
         const start = Number(f?.location?.start?.value ?? 0);
         const end = Number(f?.location?.end?.value ?? start);
         if (!start) continue;
@@ -122,7 +132,7 @@ export const fetchUniProt = createServerFn({ method: "GET" })
 
       features.sort((a, b) => Number(b.covers) - Number(a.covers) || a.start - b.start);
 
-      const audit = json["entryAudit"] ?? {};
+      const audit = json.entryAudit ?? {};
       const version = [
         audit.entryVersion ? `entry v${audit.entryVersion}` : null,
         audit.sequenceVersion ? `sequence v${audit.sequenceVersion}` : null,
@@ -130,22 +140,20 @@ export const fetchUniProt = createServerFn({ method: "GET" })
       ]
         .filter(Boolean)
         .join(" · ");
-      const functionComment = (json["comments"] ?? []).find(
-        (c: any) => c?.commentType === "FUNCTION",
-      );
+      const functionComment = (json.comments ?? []).find((c) => c?.commentType === "FUNCTION");
       const functionText: string | null =
         functionComment?.texts
-          ?.map((t: any) => String(t?.value ?? ""))
+          ?.map((t) => String(t?.value ?? ""))
           .join(" ")
           .trim() || null;
       return {
         provenance: prov(url, version || null),
-        accession: json["primaryAccession"] ?? data.accession,
+        accession: json.primaryAccession ?? data.accession,
         proteinName:
-          json["proteinDescription"]?.recommendedName?.fullName?.value ??
-          json["proteinDescription"]?.submissionNames?.[0]?.fullName?.value ??
+          json.proteinDescription?.recommendedName?.fullName?.value ??
+          json.proteinDescription?.submissionNames?.[0]?.fullName?.value ??
           "",
-        geneName: json["genes"]?.[0]?.geneName?.value ?? "",
+        geneName: json.genes?.[0]?.geneName?.value ?? "",
         length: sequence.length,
         sequence,
         functionText,
@@ -199,7 +207,7 @@ export const fetchAlphaFold = createServerFn({ method: "GET" })
           available: false,
           error: `AlphaFold returned ${res.status}`,
         };
-      const arr = (await res.json()) as any[];
+      const arr = (await res.json()) as AlphaFoldPredictionJson[];
       const entry = arr?.[0];
       if (!entry)
         return {
@@ -289,7 +297,7 @@ export const fetchClinVar = createServerFn({ method: "GET" })
       const esearch = await fetch(esearchUrl);
       if (!esearch.ok)
         return { query: term, total: 0, hits: [], error: `ClinVar returned ${esearch.status}` };
-      const sj = (await esearch.json()) as any;
+      const sj = (await esearch.json()) as ESearchJson;
       const ids: string[] = sj?.esearchresult?.idlist ?? [];
       const total = Number(sj?.esearchresult?.count ?? 0);
       if (!ids.length)
@@ -300,11 +308,11 @@ export const fetchClinVar = createServerFn({ method: "GET" })
       );
       if (!esum.ok)
         return { query: term, total, hits: [], error: `ClinVar summary returned ${esum.status}` };
-      const ej = (await esum.json()) as any;
+      const ej = (await esum.json()) as ESummaryJson;
       const hits: ClinVarHit[] = ids
         .map((id) => ej?.result?.[id])
-        .filter(Boolean)
-        .map((r: any) => ({
+        .filter((r): r is ClinVarSummaryRecord => Boolean(r) && !Array.isArray(r))
+        .map((r) => ({
           uid: String(r.uid ?? r.accession ?? ""),
           accession: String(r.accession_version ?? r.accession ?? ""),
           title: String(r.title ?? ""),
@@ -323,7 +331,7 @@ export const fetchClinVar = createServerFn({ method: "GET" })
               r.clinical_significance?.last_evaluated ??
               "",
           ),
-          conditions: ((r.germline_classification?.trait_set ?? r.trait_set ?? []) as any[])
+          conditions: (r.germline_classification?.trait_set ?? r.trait_set ?? [])
             .map((t) => t?.trait_name)
             .filter(Boolean)
             .join("; "),
@@ -370,7 +378,7 @@ export const fetchOmim = createServerFn({ method: "GET" })
       const publicUrl = `https://api.omim.org/api/entry?mimNumber=${data.mim}&include=text:description&format=json`;
       const res = await fetch(`${publicUrl}&apiKey=${key}`);
       if (!res.ok) return { mim: data.mim, configured: true, error: `OMIM returned ${res.status}` };
-      const json = (await res.json()) as any;
+      const json = (await res.json()) as OmimEntryJson;
       const entry = json?.omim?.entryList?.[0]?.entry;
       const text = entry?.textSectionList?.[0]?.textSection?.textSectionContent as
         string | undefined;
@@ -438,17 +446,17 @@ export const fetchTranscript = createServerFn({ method: "GET" })
         headers: { "content-type": "application/json", accept: "application/json" },
       });
       if (!res.ok) return { ...base, error: `Ensembl returned ${res.status}` };
-      const g = (await res.json()) as any;
-      const tx = (g.Transcript ?? []).find((t: any) => t.is_canonical === 1) ?? g.Transcript?.[0];
+      const g = (await res.json()) as EnsemblGeneJson;
+      const tx = (g.Transcript ?? []).find((t) => t.is_canonical === 1) ?? g.Transcript?.[0];
       if (!tx?.Translation) return { ...base, error: "No coding transcript found" };
       const strand = Number(tx.strand);
       const tStart = Number(tx.Translation.start),
         tEnd = Number(tx.Translation.end);
-      const exonsRaw = [...(tx.Exon ?? [])].sort((a: any, b: any) =>
+      const exonsRaw = [...(tx.Exon ?? [])].sort((a, b) =>
         strand === 1 ? a.start - b.start : b.end - a.end,
       );
       let acc = 0;
-      const exons: TranscriptExon[] = exonsRaw.map((e: any, i: number) => {
+      const exons: TranscriptExon[] = exonsRaw.map((e, i) => {
         const s = Math.max(e.start, tStart),
           en = Math.min(e.end, tEnd);
         if (s > en)

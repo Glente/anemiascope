@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import type { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
+import type { Expression } from "molstar/lib/mol-script/language/expression";
+import type { ColorTheme } from "molstar/lib/mol-theme/color";
 import "molstar/build/viewer/molstar.css";
 
 type Props = {
@@ -25,14 +28,14 @@ export default function StructureViewer({
   const onPickRef = useRef(onPick);
   onPickRef.current = onPick;
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const pluginRef = useRef<any>(null);
+  const pluginRef = useRef<PluginUIContext | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [message, setMessage] = useState("Loading AlphaFold model…");
 
   // Create plugin once
   useEffect(() => {
     let disposed = false;
-    let plugin: any = null;
+    let plugin: PluginUIContext | null = null;
 
     (async () => {
       const [{ createPluginUI }, { renderReact18 }, { DefaultPluginUISpec }] = await Promise.all([
@@ -64,7 +67,7 @@ export default function StructureViewer({
       const [{ StructureElement, StructureProperties }] = await Promise.all([
         import("molstar/lib/mol-model/structure"),
       ]);
-      plugin.behaviors.interaction.click.subscribe((e: any) => {
+      plugin.behaviors.interaction.click.subscribe((e) => {
         const loci = e?.current?.loci;
         if (!loci || !StructureElement.Loci.is(loci) || StructureElement.Loci.isEmpty(loci)) return;
         const loc = StructureElement.Loci.getFirstLocation(loci);
@@ -122,7 +125,7 @@ export default function StructureViewer({
         await plugin.dataTransaction(async () => {
           for (const s of plugin.managers.structure.hierarchy.current.structures) {
             await plugin.managers.structure.component.updateRepresentationsTheme(s.components, {
-              color: colorTheme as any,
+              color: colorTheme as ColorTheme.BuiltIn,
             });
           }
         });
@@ -150,10 +153,12 @@ export default function StructureViewer({
   }, [accession, colorTheme]);
 
   // Highlight focus + variant residues without reloading the model
+  const extraKey = (extra ?? []).join(",");
   useEffect(() => {
     const plugin = pluginRef.current;
     if (!plugin || !loadedKey) return;
     let cancelled = false;
+    const extraResidues = extraKey ? extraKey.split(",").map(Number) : [];
     (async () => {
       const [
         { StructureSelectionQuery },
@@ -168,8 +173,8 @@ export default function StructureViewer({
       ]);
       if (cancelled) return;
       const structures = plugin.managers.structure.hierarchy.current.structures;
-      const old = structures.flatMap((s: any) =>
-        s.components.filter((c: any) => String(c.cell?.obj?.label ?? "").startsWith("sync:")),
+      const old = structures.flatMap((s) =>
+        s.components.filter((c) => String(c.cell?.obj?.label ?? "").startsWith("sync:")),
       );
       if (old.length) await plugin.managers.structure.hierarchy.remove(old);
 
@@ -178,7 +183,7 @@ export default function StructureViewer({
           "residue-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.label_seq_id(), r]),
           "group-by": MS.struct.atomProperty.macromolecular.residueKey(),
         });
-      const add = (label: string, expr: any) =>
+      const add = (label: string, expr: Expression) =>
         plugin.managers.structure.component.add(
           {
             selection: StructureSelectionQuery(label, expr),
@@ -189,7 +194,7 @@ export default function StructureViewer({
         );
 
       if (residue) await add(`sync: variant residue ${residue}`, resExpr(residue));
-      for (const r of extra ?? []) await add(`sync: variant residue ${r}`, resExpr(r));
+      for (const r of extraResidues) await add(`sync: variant residue ${r}`, resExpr(r));
       const target = focus ?? residue;
       if (!target) return;
       if (target !== residue) await add(`sync: selected residue ${target}`, resExpr(target));
@@ -204,7 +209,7 @@ export default function StructureViewer({
       const structure = plugin.managers.structure.hierarchy.current.structures[0]?.cell?.obj?.data;
       if (structure && !cancelled) {
         const sel = Script.getStructureSelection(
-          (Q: any) =>
+          (Q) =>
             Q.struct.generator.atomGroups({
               "residue-test": Q.core.rel.eq([
                 Q.struct.atomProperty.macromolecular.label_seq_id(),
@@ -223,7 +228,7 @@ export default function StructureViewer({
     return () => {
       cancelled = true;
     };
-  }, [loadedKey, residue, focus, (extra ?? []).join(",")]);
+  }, [loadedKey, residue, focus, extraKey]);
 
   return (
     <div className="relative h-[340px] w-full overflow-hidden rounded-lg border bg-card sm:h-[460px]">
